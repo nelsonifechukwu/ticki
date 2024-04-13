@@ -1,7 +1,7 @@
-from flask import Blueprint
+from app import app
 
-ticki = Blueprint('ticki', __name__)
-
-@ticki.route('/')
+@app.route('/',  methods=['GET'])
 def index():
-	return "Hello World"
+    # Access the app context using the app object
+    # Your route logic here
+    return 'Hello World'
