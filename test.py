@@ -10,10 +10,10 @@ from deepface.basemodels import VGGFace
 from retinaface import RetinaFace
 import matplotlib.pyplot as plt
 import face_recognition
-from PIL import Image 
+from PIL import Image
 
 
-## Get face, dfsd, face-recognition, deepface
+# Get face, dfsd, face-recognition, deepface
 class faceDetails:
     img_deets = {}
 
@@ -22,15 +22,18 @@ class faceDetails:
         self.pic_name = pic_name
         faceDetails.img_deets[encoding] = pic_name
 
+
 location = "faces/Screenshot 2024-04-13 at 23.47.03.png"
+
+
 def showwith_retina():
-    faces = RetinaFace.detect_faces(img_path = location)
+    faces = RetinaFace.detect_faces(img_path=location)
     r_img = cv.imread(location)
     for face in faces:
         place = faces[f"{face}"][f"facial_area"]
         pt1 = (place[0], place[1])
         pt2 = (place[2], place[3])
-        cv.rectangle(r_img, pt1, pt2, color = (0, 255, 0), thickness = 2)
+        cv.rectangle(r_img, pt1, pt2, color=(0, 255, 0), thickness=2)
     plt.imshow(r_img)
     plt.show()
 
@@ -61,5 +64,6 @@ def faces_to_embeddings():
             plt.imshow(face)
             plt.imshow(f)
             plt.show()
+
 
 faces_to_embeddings()
