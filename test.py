@@ -1,4 +1,5 @@
 import cv2 as cv
+import torch
 import numpy as np
 import os
 import argparse
@@ -11,6 +12,12 @@ from retinaface import RetinaFace
 import matplotlib.pyplot as plt
 import face_recognition
 from PIL import Image
+
+from RealESRGAN import RealESRGAN
+from super_image import EdsrModel, ImageLoader
+
+#testing several options, arcface, mtcnn
+#use the average of few correct pictures since the setting never changes
 
 
 # Get face, dfsd, face-recognition, deepface
@@ -66,4 +73,47 @@ def faces_to_embeddings():
             plt.show()
 
 
-faces_to_embeddings()
+# faces_to_embeddings()
+
+def compare_nei():
+    all_neis = os.listdir("nei")
+
+    for i, nei in enumerate(all_neis):
+        for element in all_neis[i+1:]:
+            path1 = os.path.join("nei",nei) 
+            path2 = os.path.join("nei",element)
+            
+            result = DeepFace.verify(path1,
+                        path2, model_name="ArcFace", normalization="ArcFace", distance_metric="cosine", detector_backend="skip", enforce_detection=False)
+            print(path1, path2,result["verified"])
+            
+def compare_obi():
+    device = torch.device('cpu')
+    model = EdsrModel.from_pretrained('eugenesiow/edsr-base', scale=2)
+    all_obis = os.listdir("obinna")
+    model = RealESRGAN(device, scale=4)
+    model.load_weights('weights/RealESRGAN_x4.pth', download=True)
+    for i, obi in enumerate(all_obis):
+        location = f"obinna/{obi}"
+        faces = RetinaFace.extract_faces(img_path=location, align=True, expand_face_area= 30)
+        for a, face in enumerate(faces):
+            img = Image.fromarray(face)
+            img.save('f.png')
+            # Load image
+            # path_to_image = 'f.png'
+            # image = Image.open(path_to_image).convert('RGB')
+
+            # Upscale image
+            # sr_image = model.predict(image)
+
+            # Save image
+            # sr_image.save('f.png')
+            result = DeepFace.verify('f.png',
+                        'obinna/mobi.png', model_name="ArcFace", normalization="ArcFace", distance_metric="euclidean_l2", detector_backend="mtcnn", enforce_detection=False)
+            print('obinna/obin.JPG', location, result["verified"])
+            plt.imshow(face)
+            plt.show(block=False)
+            plt.pause(1)
+            plt.close()
+compare_obi()
+
