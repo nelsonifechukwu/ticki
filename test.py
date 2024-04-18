@@ -12,6 +12,7 @@ from retinaface import RetinaFace
 import matplotlib.pyplot as plt
 import face_recognition
 from PIL import Image
+from pathlib import Path
 
 # from RealESRGAN import RealESRGAN
 # from super_image import EdsrModel, ImageLoader
@@ -42,8 +43,8 @@ def showwith_retina():
 def compare_pics(database:str, test_input:str):
     all_pics = os.listdir(database)
     for i, pic in enumerate(all_pics):
-        location = f"{database}/{pic}"
-        faces = RetinaFace.extract_faces(img_path=location, align=True, expand_face_area= 20)        
+        location = Path.cwd() / f"{database}" / f"{pic}"
+        faces = RetinaFace.extract_faces(img_path=location, align=True, expand_face_area=20)
         for  face in faces:
             if face.any():
                 img = Image.fromarray(face)
