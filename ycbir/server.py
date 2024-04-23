@@ -1,3 +1,11 @@
+#implement several features:
+"""
+save only faces in images
+select only similar images
+better ui
+always run embeddings code when new image is added
+"""
+
 import numpy as np
 from PIL import Image
 from extractor import FeatureExtractor
@@ -7,7 +15,6 @@ from pathlib import Path
 
 app = Flask(__name__)
 path = Path("ycbir/static/imgycbir")
-pat = "ycbir/static/imgycbir"
 
 def image_to_embeddings(path: str):
     for img in path.iterdir():
