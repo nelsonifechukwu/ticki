@@ -10,12 +10,12 @@
             </form>
             <h2>Query:</h2>
             {% if query_path %}
-            <img src="{{ query_path }}" width="300px">
+            <img src="{{ url_for('static', filename = query_path )}}" width="300px">
             {% endif %}
             <h2>Results:</h2>
             {% for score in scores %}
             <figure style="float: left; margin-right: 20px; margin-bottom: 20px;">
-                <img src="{{ score[1] }}" height="200px">
+                <img src="{{url_for('static', filename = score[1])}}" height="200px">
                 <figcaption>{{ score[0] }}</figcaption>
             </figure>
             {% endfor %}
