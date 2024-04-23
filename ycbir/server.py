@@ -14,7 +14,7 @@ from flask import Flask, request, render_template
 from pathlib import Path
 
 app = Flask(__name__)
-path = Path("ycbir/static/imgycbir")
+path = Path("ycbir/static/database")
 
 def image_to_embeddings(path: str):
     for img in path.iterdir():
