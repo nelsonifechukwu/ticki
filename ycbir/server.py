@@ -3,7 +3,7 @@
 save only faces in images
 select only similar images
 better ui
-track and run embeddings code when new image is added (like git)
+track and run embeddings code when new image is added (like git) -> threads or check if no of new list > old list
 """
 
 import numpy as np
