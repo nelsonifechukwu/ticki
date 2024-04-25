@@ -5,15 +5,19 @@ select only similar images
 better ui
 track and run embeddings code when new image is added (like git) -> threads or check if no of new list > old list
 """
-
+import sys
+sys.path.append("./")
+from config import Config
 import numpy as np
 from PIL import Image
 from extractor import FeatureExtractor
 from datetime import datetime
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, flash 
 from pathlib import Path
+from scipy.spatial import distance
 
 app = Flask(__name__)
+app.config.from_object(Config)
 path = Path("ycbir/static/database")
 
 def image_to_embeddings(path: str):
@@ -35,13 +39,16 @@ for feature_path in path.glob("*.npy"):
     img_paths.append(path.parts[-1] + "/"+ (feature_path.stem + ".png"))
 features = np.array(features, dtype=object).astype(float)
 
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        file = request.files['query_img']
-
-        # Save query image
-        img = Image.open(file.stream)  # PIL image
+        file = request.files['query_img']  # Save query image
+        try:
+            img = Image.open(file.stream)  # PIL image
+        except:
+            raise Exception(
+                flash("Can't Open file. Insert another file.", "danger"))
         uploaded_img_path = "ycbir/static/uploaded/" + datetime.now().isoformat().replace(":",
                                                                                           ".") + "_" + file.filename
         img.save(uploaded_img_path)
@@ -49,7 +56,9 @@ def index():
         # Run search
         query = fe.extract(img).astype(float)
         # L2 distances to features
-        dists = np.linalg.norm(features-query, axis=1)
+        # dists = np.linalg.norm(features-query, axis=1)
+        dists = list(map(
+            lambda x: 1 - distance.cosine(x, query), features))
         ids = np.argsort(dists)[:30]  # Top 30 results
         scores = [(dists[id], img_paths[id]) for id in ids]
         base_path = Path("ycbir/static")
