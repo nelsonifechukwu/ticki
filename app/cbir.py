@@ -28,9 +28,10 @@ class ImageProcessor:
             raise TypeError("The 'database' parameter must be a Path object.")
         if not database.exists():
             raise FileNotFoundError(f"The directory '{database}' does not exist.")
-    
+        
         faces_directory = database / "faces"
-        faces_directory.mkdir(parents=True, exist_ok=True)
+        if not faces_directory.exists():
+            faces_directory.mkdir(parents=True, exist_ok=True)
                         
         all_pics = Path(database).iterdir()
         for pic in all_pics:
