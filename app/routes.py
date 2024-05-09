@@ -34,6 +34,7 @@ from scipy.spatial import distance
 
 database = Path("app/static/database")
 faces_directory = database / "faces"
+upload_directory = database / "uploads" 
 
 # Read image features
 fe = ImageProcessor()
@@ -56,7 +57,7 @@ def index():
         except:
             raise Exception(
                 flash("Can't Open file. Insert another file.", "danger"))
-        uploaded_img_path = "ycbir/static/uploaded/" + datetime.now().isoformat().replace(":",
+        uploaded_img_path = str(upload_directory)+ "/" + datetime.now().isoformat().replace(":",
                                                                                           ".") + "_" + file.filename
         img.save(uploaded_img_path)
 
@@ -68,7 +69,7 @@ def index():
             lambda x: 1 - distance.cosine(x, query), features))
         ids = np.argsort(dists)[:30]  # Top 30 results
         scores = [(dists[id], img_paths[id]) for id in ids]
-        base_path = Path("ycbir/static")
+        base_path = database
 
         return render_template('index.html',
                                query_path=Path(uploaded_img_path).relative_to(base_path),
