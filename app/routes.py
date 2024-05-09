@@ -1,6 +1,5 @@
 #implement several features:
 """
-save only faces in images
 select only similar images
 better ui
 track and run embeddings code when new image is added (like git) -> threads or check if no of new list > old list
@@ -29,22 +28,22 @@ import face_recognition
 from flask import request, render_template, flash
 
 # Deep learning and computer vision imports
-from cbir import ImageProcessor
+from .cbir import ImageProcessor
 from scipy.spatial import distance
 
 
 database = Path("app/static/database")
 faces_directory = database / "faces"
 
-
-
 # Read image features
 fe = ImageProcessor()
+# process.extract_faces(database=Path.cwd() / "app" / "static" / "database")
+fe.feature_extractor(faces=faces_directory)
 features = []
 img_paths = []
-for feature_path in path.glob("*.npy"):
+for feature_path in faces_directory.glob("*.npy"):
     features.append(np.load(feature_path))
-    img_paths.append(path.parts[-1] + "/"+ (feature_path.stem + ".png"))
+    img_paths.append(faces_directory / (feature_path.stem + ".png"))
 features = np.array(features, dtype=object).astype(float)
 
 

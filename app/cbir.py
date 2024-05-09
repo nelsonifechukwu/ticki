@@ -2,7 +2,9 @@ from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
 from tensorflow.keras.models import Model
 import numpy as np
+from glob import glob
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 from pathlib import Path
 from deepface import DeepFace
 from deepface.basemodels import VGGFace
@@ -34,8 +36,12 @@ class ImageProcessor:
                         
         all_pics = Path(database).iterdir()
         for pic in all_pics:
-            if pic.is_file():
-                print(pic)
+            if pic.is_file() and pic.suffix.lower() in ['.png', '.jpg']:
+                # Load the image
+                img = mpimg.imread(pic)
+                # plt.imshow(img)
+                # plt.show(block=False)
+                # plt.pause(10)
                 faces = RetinaFace.extract_faces(img_path=str(pic), align=True, expand_face_area=20)
                 for i, face in enumerate(faces):
                     if face.any():
@@ -73,11 +79,6 @@ class ImageProcessor:
                 # Save the array to a .npy file
                 np.save(f"{path}/{face.stem}" + ".npy", image_embedding)
 
-
-
-process = ImageProcessor()
-# process.feature_extractor(faces=Path("app/static/database/nei"))
-process.extract_faces(database=Path.cwd() / "app" / "static" / "database")
 
 # def compare_pics(database:str, test_input:str):
 #     all_pics = os.listdir(database)
