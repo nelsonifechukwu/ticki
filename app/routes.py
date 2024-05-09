@@ -52,14 +52,8 @@ features = np.array(features, dtype=object).astype(float)
 def index():
     if request.method == 'POST':
         file = request.files['query_img']  # Save query image
-        try:
-            img = Image.open(file.stream)  # PIL image
-        except:
-            raise Exception(
-                flash("Can't Open file. Insert another file.", "danger"))
-        uploaded_img_path = str(upload_directory)+ "/" + datetime.now().isoformat().replace(":",
-                                                                                          ".") + "_" + file.filename
-        img.save(uploaded_img_path)
+        uploaded_img_path = saveFile(file)
+        
 
         # Run search
         query = fe.extract(img).astype(float)
@@ -77,3 +71,12 @@ def index():
     else:
         return render_template('index.html')
     
+def saveFile(file):
+    try:
+        img = Image.open(file.stream)  # PIL image
+    except:
+        raise Exception(
+            flash("Can't Open file. Insert another file.", "danger"))
+    uploaded_img_path=str(upload_directory)+ "/" + datetime.now().isoformat().replace(":",".") + "_" + file.filename
+    img.save(uploaded_img_path)
+    return uploaded_img_path
