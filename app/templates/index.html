@@ -3,7 +3,7 @@
   <head>
     <link
       rel="stylesheet"
-      href="/Users/user/Desktop/nelson/ticki/app/static/css/main.css"
+      href="{{url_for('static', filename='css/main.css')}}"
       type="text/css"
     />
     <!--{{url_for('static', filename='css/main.css')}}-->
@@ -23,7 +23,7 @@
           <h2>Query:</h2>
           {% if query_path %}
           <img
-            src="{{ url_for('static', filename = "database" + query_path )}}"
+            src="{{ url_for('static', filename =  query_path )}}"
             width="300px"
           />
           {% endif %}
