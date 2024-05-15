@@ -26,18 +26,18 @@ from flask import request, render_template, flash
 
 # Deep learning and computer vision imports
 from .cbir import ImageProcessor
-from .functions import extract_all_faces_features, process_and_save_query_image
+from .functions import load_allfaces_embeddings, save_query_image
 from scipy.spatial import distance
 
 database = Path("app/static/database")
 fe = ImageProcessor()
-features, img_paths = extract_all_faces_features()
+features, img_paths = load_allfaces_embeddings()
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        raw_img = request.files['query_img']  # get query image
-        img, img_path = process_and_save_query_image(raw_img)
+        img_stream = request.files['query_img']  # get query image
+        img, img_path = save_query_image(img_stream)
         # Run search
         query = fe.extract_features(img_path).astype(float)
         # L2 distances to features
