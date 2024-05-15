@@ -6,6 +6,7 @@ better ui
 track and run embeddings code when new image is added (like git) -> threads or check if no of new list > old list
 implement hash map to group similar face embeddings to improve search, If A=B & B=C, then, A=C. Wow, I thought of a hashmap w/o
 knowing it was a hash map!
+Processing a lot of requests -> divide the no of images in the gdrive and processes requests asyc to compare or just download all of em and group their embeddings.
 """
 from app import app
 # Standard library imports
