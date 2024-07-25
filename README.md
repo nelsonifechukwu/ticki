@@ -2,6 +2,7 @@
 Given an image with a face, select all images in a repository that contain the face
 
 # Application Exposure
+- Acts like a service for photographers (esp for unconscious pictures)
 - Photographers and Clients will register on the application
 - Clients can search for their pictures (that's consciously or unconsciously taken) per photographer and select based on quality, price, and other necessary info
 - Clients can narrow down the date to easily access current pics
