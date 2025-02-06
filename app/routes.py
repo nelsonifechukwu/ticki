@@ -52,5 +52,5 @@ def index():
                                query_path=query_path,
                                scores=scores)
     else:
-        return render_template('index.html')
+        return render_template('main.html')
     
