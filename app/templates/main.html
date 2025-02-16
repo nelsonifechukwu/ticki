@@ -1,1 +1,45 @@
-!DOCTYPE
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="refresh" content="" />
+    <link
+      rel="stylesheet"
+      href="{{url_for('static', filename='css/main.css')}}"
+      type="text/css"
+    />
+    <script
+      type="text/javascript"
+      src="{{url_for('static', filename='js/input.js')}}"
+    defer ></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div>
+          <img src="{{url_for('static', filename='imgs/intro.jpg')}}" />
+        </div>
+        <div>
+          Welcome to Ticki. Given an input face, find all images in your
+          repository that contains the face.
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="input-section">
+          <div class="input-img-container">
+            <label id = "input-img-label" for="input-img">+</label>
+            <input type="file" id="input-img" />
+          </div>
+
+          <div>
+            <label for="repo-url">Repository URL</label>
+            <input type="text" id="repo-url" />
+          </div>
+        </div>
+        <div class="selected-imgs"></div>
+      </div>
+
+      <div class="footer">Ticki.</div>
+    </div>
+  </body>
+</html>
