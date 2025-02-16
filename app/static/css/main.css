@@ -1,65 +1,156 @@
 * {
   margin: 0;
-  padding: 0;
   box-sizing: border-box;
   font-family: "Poppins", sans-serif;
 }
+:root {
+  --body-padding: 30px;
+  --container-height: calc(100vh - (2 * var(--body-padding)));
+  --container-padding: 10px;
+  --header-height: 15%;
+  --footer-height: 2%;
+  --section-borders: 1px solid;
+  --main-content-box-shadow: 0px 0px 5px 0px rgba(48, 49, 46, 0.942);
+}
 
 body {
-  overflow-x: hidden;
-  background-color: #f1f2f3;
+  /* width: 100%;
+  height: 100%; */
+  background: #414843f7;
+  padding: var(--body-padding);
+  /* position: relative; */
   /* overflow-y: hidden;  */
 }
 
 .container {
-  background-color: #455788;
-  height: 100vh;
-  width: 80%;
-  margin: 0px auto;
-  border-radius: 10px;
-  border: 2px solid transparent;
-  box-shadow: 3px 3px 5px rgba(48, 49, 46, 0.942);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--container-height);
+  width: 100%;
+  border: var(--section-borders);
+  padding: var(--container-padding);
+
   .header {
-    background-color: white;
-    font-weight: none;
-    margin: 50px 0px;
-    text-align: center;
-    color: white;
-    text-decoration: underline;
-    line-height: 40px;
-  }
-  .content {
-    height: calc(100% - 180px);
-    border-radius: 10px;
     display: flex;
-    column-gap: 50px;
     flex-direction: row;
-    justify-content: space-around;
+    gap: 10px;
+    height: var(--header-height);
+    font-weight: none;
     align-items: center;
-    padding: 0px 50px;
+    color: white;
+    /* background-color: rgb(189, 41, 41); */
 
     > div {
-  
-      border-radius: 10px;
-      background-color: rgba(239, 240, 237, 0.942);
-    }
-    .input-img {
-      height: 300px;
-      width: 300px;
+      /* background-color: rgb(61, 78, 188); */
+      font-size: 20px;
     }
 
-    .output-imgs {
-      height: 800px;
-      width: 800px;
+    img {
+      height: 100px;
+      width: 100px;
+      border-radius: 50%;
+    }
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    height: var(--footer-height);
+    color: white;
+    text-align: center;
+    /* border: 2px solid; */
+    width: 100%;
+  }
+
+  .main-content {
+    display: flex;
+    height: calc(
+      var(--container-height) - var(--container-padding) - var(--footer-height) -
+        var(--header-height) - 5px
+    );
+    border: var(--section-borders);
+    box-shadow: var(--main-content-box-shadow);
+
+    .input-section {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      height: 100%;
+      border: var(--section-borders);
+      text-align: center;
+      border-color: red;
+      align-items: center;
+      justify-content: space-around;
+
+      .input-img-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        flex-direction: column;
+        align-items: center;
+
+        label {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          height: 150px;
+          width: 150px;
+          border: solid 1px black;
+          border-radius: 5px;
+          object-fit: cover;
+          cursor: pointer;
+          font-size: 150%;
+        }
+
+        #input-img {
+          opacity: 0;
+          height: 0;
+        }
+      }
+    }
+
+    .selected-imgs {
+      flex: 2;
+      height: 100%;
+      border: var(--section-borders);
     }
   }
 }
-@media screen and (max-width: 1400px) {
-  .container {
-    .content {
-      flex-direction: column;
-      row-gap: 50px;
 
+.content {
+  height: calc(100% - 180px);
+  border-radius: 10px;
+  display: flex;
+  column-gap: 50px;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0px 50px;
+}
+
+.content > div {
+  border-radius: 10px;
+  background-color: rgba(239, 240, 237, 0.942);
+}
+.content .input-img {
+  height: 300px;
+  width: 300px;
+}
+
+.content .output-imgs {
+  height: 800px;
+  width: 800px;
+}
+
+@media screen and (min-width: 1200px) {
+  .container {
+    max-width: 1000px;
+    margin: auto auto;
+    .content {
+      /* flex-direction: column; */
+      row-gap: 50px;
       .output-imgs {
         height: 600px;
         width: 600px;
@@ -69,12 +160,24 @@ body {
 }
 
 @media screen and (max-width: 600px) {
+  .header {
+    text-align: center;
+  }
+
+  .header > div:first-of-type {
+    /* Styles for the last div inside the header */
+    display: none;
+  }
+
   .container {
     .content {
       .output-imgs {
         height: 600px;
         width: 300px;
       }
+    }
+    .main-content {
+      flex-direction: column;
     }
   }
 }
