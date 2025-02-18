@@ -10,7 +10,8 @@
     <script
       type="text/javascript"
       src="{{url_for('static', filename='js/input.js')}}"
-    defer ></script>
+      defer
+    ></script>
   </head>
   <body>
     <div class="container">
@@ -26,20 +27,31 @@
 
       <div class="main-content">
         <div class="input-section">
-          <div class="input-img-container">
-            <label id = "input-img-label" for="input-img">+</label>
-            <input type="file" id="input-img" />
-          </div>
-
-          <div>
-            <label for="repo-url">Repository URL</label>
-            <input type="text" id="repo-url" />
-          </div>
+          <form
+            method="POST"
+            class="img-input-form"
+            enctype="multipart/form-data"
+            action="{{url_for('index')}}"
+          >
+            <div class="input-img-container">
+              <label id="input-img-label" for="input-img-preview">+</label>
+              <input type="file" id="input-img-preview" />
+              <input type="file" id="q-img" name="query-img"/>
+            </div>
+            <div>
+              <input
+                type="text"
+                id="repo-url"
+                placeholder="Repository URL"
+                required
+              />
+            </div>
+            <div><input type="submit" /></div>
+          </form>
         </div>
         <div class="selected-imgs"></div>
       </div>
-
-      <div class="footer">Ticki.</div>
+      <div class="footer">@Ticki.</div>
     </div>
   </body>
 </html>
