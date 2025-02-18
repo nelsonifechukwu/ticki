@@ -20,20 +20,3 @@ class Config:
     GOOGLE_DISCOVERY_URL = (
     "https://accounts.google.com/.well-known/openid-configuration"
 )
-
-
-# class Mail:
-#   def __init__(self, name, mail):
-#     self.name = name
-#     self.mail = mail
-#     self.all = self.name + self.mail
-
-#   def show(self):
-#     print(self.name + " " + self.mail + " " + self.all)
-
-
-# c = Mail("Nelson", "nelson.elijah@yahoo.com")
-# c.name = "Blessing"
-# c.mail = "b@yahoo.com"
-# c.show()
-# print(c.all)

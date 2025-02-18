@@ -2,7 +2,7 @@
 """
 check if database/uploads directory is there, else create one
 select only similar images
-better ui
+better ui ---> DONE
 track and run embeddings code when new image is added (like git) -> threads or check if no of new list > old list
 implement hash map to group similar face embeddings to improve search, If A=B & B=C, then, A=C. Wow, I thought of a hashmap w/o
 knowing it was a hash map!
@@ -22,7 +22,7 @@ from PIL import Image
 from pathlib import Path
 
 # Framework imports
-from flask import request, render_template, flash
+from flask import request, render_template, flash, url_for
 
 # Deep learning and computer vision imports
 from .cbir import ImageProcessor
@@ -35,8 +35,9 @@ features, img_paths = load_allfaces_embeddings()
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    print(url_for('index'))
     if request.method == 'POST':
-        img_stream = request.files['query_img']  # get query image
+        img_stream = request.files.get('query-img')  # get query image
         img, img_path = save_query_image(img_stream)
         # Run search
         query = fe.extract_features(img_path).astype(float)
