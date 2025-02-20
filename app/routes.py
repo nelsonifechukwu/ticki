@@ -49,7 +49,7 @@ def index():
         scores = [(dists[id], img_paths[id]) for id in ids]
         base_path = Path("app/static")
         query_path = Path(img_path).relative_to(base_path)
-        return render_template('index.html',
+        return render_template('main.html',
                                query_path=query_path,
                                scores=scores)
     else:
