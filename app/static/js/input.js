@@ -1,5 +1,5 @@
-const imgInputHelper = document.getElementById("input-img-preview");
-const imgInputHelperLabel = document.getElementById("input-img-label");
+const imgInput = document.getElementById("input-img-preview");
+const imgInputLabel = document.getElementById("input-img-label");
 const imgContainer = document.querySelector(".input-img-container");
 let imgFiles = [];
 
@@ -25,7 +25,7 @@ let imgFiles = [];
 //     return;
 //   };
 const addImgHandler = () => {
-  const file = imgInputHelper.files[0];
+  const file = imgInput.files[0];
   if (!file) return;
 
   // Generate img preview
@@ -33,39 +33,39 @@ const addImgHandler = () => {
   reader.readAsDataURL(file);
   reader.onload = () => {
     const newImg = document.createElement("img");
-    newImg.src = reader.result;
+    newImg.src = reader.result; //get the input img
 
     // Check if imgContainer already contains an img element
     const existingImg = imgContainer.querySelector("img");
     if (existingImg) {
-      // If there's already an img element, replace it with the new one
+      // If there's already an img element, replace it with the new input
       imgContainer.replaceChild(newImg, existingImg);
       imgFiles[0] = file;
     } else {
-      // If no img element, insert the new one before the label
-      imgContainer.insertBefore(newImg, imgInputHelperLabel);
+      // If no img element, insert the new input before the label
+      imgContainer.insertBefore(newImg, imgInputLabel);
       imgFiles = [file];
     }
   };
   // Reset image input
-  imgInputHelper.value = "";
+  imgInput.value = "";
 };
 
 //store the img file in an <input file element> kinda obj--FileList, (using DataTransfer) so that it can be submitted via the form
 const getImgFileList = (imgFiles) => {
-  const imgFilesHelper = new DataTransfer();
-  imgFilesHelper.items.add(imgFiles[0]);
-  return imgFilesHelper.files;
+  const _imgFiles = new DataTransfer();
+  _imgFiles.items.add(imgFiles[0]);
+  return _imgFiles.files;
 };
 
 const customFormSubmitHandler = (ev) => {
-  ev.preventDefault();//prevent form submission
-  const ImgInput = document.getElementById("q-img");
-  ImgInput.files = getImgFileList(imgFiles);
+  //ev.preventDefault(); //prevent form submission
+  const _ImgInput = document.getElementById("q-img");
+  _ImgInput.files = getImgFileList(imgFiles);
   ev.target.submit();// submit form to server, etc
 };
 
-imgInputHelper.addEventListener("change", addImgHandler);
+imgInput.addEventListener("change", addImgHandler);
 document
   .querySelector(".img-input-form")
   .addEventListener("submit", customFormSubmitHandler);
