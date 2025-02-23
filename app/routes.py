@@ -1,4 +1,4 @@
-#implement several features:
+# implement several features:
 """
 check if database/uploads directory is there, else create one
 select only similar images
@@ -8,50 +8,43 @@ implement hash map to group similar face embeddings to improve search, If A=B & 
 knowing it was a hash map!
 Processing a lot of requests -> divide the no of images in the gdrive and processes requests asyc to compare or just download all of em and group their embeddings.
 """
+from flask import request, render_template, flash, url_for
 from app import app
-# Standard library imports
-
 import sys
+
 sys.path.append("./")
 from datetime import datetime
-
-
-# Third-party library imports
 import numpy as np
 from PIL import Image
 from pathlib import Path
-
-# Framework imports
-from flask import request, render_template, flash, url_for
-
-# Deep learning and computer vision imports
 from .cbir import ImageProcessor
-from .functions import load_allfaces_embeddings, save_query_image
 from scipy.spatial import distance
 
-database = Path("app/static/database")
 fe = ImageProcessor()
-features, img_paths = load_allfaces_embeddings()
+database = Path("app/static/database")
+upload_directory = database / "uploads"
+features, img_paths = fe.load_allfaces_embeddings()
 
-@app.route('/', methods=['GET', 'POST'])
+
+@app.route("/", methods=["GET", "POST"])
 def index():
-    print(url_for('index'))
-    if request.method == 'POST':
-        img_stream = request.files.get('query-img')  # get query image
-        img, img_path = save_query_image(img_stream)
+    if request.method == "POST":
+        img_stream = request.files.get("query-img")  # get query image
+        img_path = upload_directory  # / "input.png"
+        # img, img_path = fe.save_query_image(img_stream)
         # Run search
-        query = fe.extract_features(img_path).astype(float)
+        # face_dir = fe.extract_faces(img_path)
+        # face_dir = upload_directory / "faces"
+        face_dir = face_dir / "input_0.png"
+        query = fe.extract_features(face_dir/"input_0.png").astype(float)
+
         # L2 distances to features
         # dists = np.linalg.norm(features-query, axis=1)
-        dists = list(map(
-            lambda x: 1 - distance.cosine(x, query), features))
+        dists = list(map(lambda x: 1 - distance.cosine(x, query), features))
         ids = np.argsort(dists)[:30]  # Top 30 results
         scores = [(dists[id], img_paths[id]) for id in ids]
         base_path = Path("app/static")
         query_path = Path(img_path).relative_to(base_path)
-        return render_template('main.html',
-                               query_path=query_path,
-                               scores=scores)
+        return render_template("main.html", scores=scores) # query_path=query_path,
     else:
-        return render_template('main.html')
-    
+        return render_template("main.html")
