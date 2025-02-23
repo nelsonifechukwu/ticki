@@ -43,7 +43,7 @@
                 type="text"
                 id="repo-url"
                 placeholder="Repository URL"
-                required
+                {#required#}
               />
             </div>
             <div><input type="submit" /></div>
@@ -57,6 +57,9 @@
               src="{{url_for('static', filename = score[1])}}"
               height="150px" width="150px"
             />
+            <div class="similarity_score">
+              {{score[0]}}
+            </div>
            </div>
           {% endfor %}
 
