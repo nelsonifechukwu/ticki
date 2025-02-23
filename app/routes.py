@@ -30,17 +30,15 @@ features, img_paths = fe.load_allfaces_embeddings()
 def index():
     if request.method == "POST":
         img_stream = request.files.get("query-img")  # get query image
-        img_path = upload_directory  # / "input.png"
-        # img, img_path = fe.save_query_image(img_stream)
+        # img_path = upload_directory  
+        _, img_path = fe.save_query_image(img_stream)
         # Run search
-        # face_dir = fe.extract_faces(img_path)
-        # face_dir = upload_directory / "faces"
-        face_dir = face_dir / "input_0.png"
-        query = fe.extract_features(face_dir/"input_0.png").astype(float)
+        face_dir = fe.extract_face(img_path)    
+        query_feature = fe.extract_features(face_dir).astype(float)
 
         # L2 distances to features
         # dists = np.linalg.norm(features-query, axis=1)
-        dists = list(map(lambda x: 1 - distance.cosine(x, query), features))
+        dists = list(map(lambda x: 1 - distance.cosine(x, query_feature), features))
         ids = np.argsort(dists)[:30]  # Top 30 results
         scores = [(dists[id], img_paths[id]) for id in ids]
         base_path = Path("app/static")

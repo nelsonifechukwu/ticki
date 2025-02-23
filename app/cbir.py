@@ -58,16 +58,46 @@ class ImageProcessor:
                         img.save(face_filepath)
         return faces_directory
     
-    @staticmethod    
-    def extract_faces_thread(img_path: Path):
+    @staticmethod
+    def extract_faces_process(img_path: Path):
+        """Multiprocessing-safe face extraction using RetinaFace."""
         faces_directory = img_path.parent / "faces"
+        faces_directory.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+
+        try:
+            faces = RetinaFace.extract_faces(
+                img_path=str(img_path),
+                align=True,
+                expand_face_area=20,
+            )
+        except Exception as e:
+            print(f"Error processing {img_path}: {e}")
+            return
+
+        for i, face in enumerate(faces):
+            if face.any():
+                face = face.astype("uint8")
+                img = Image.fromarray(face).convert("RGB")
+                img = img.resize((224, 224))  # Resize for consistency
+                face_filename = f"{img_path.stem}_face_{i}.png"
+                face_filepath = faces_directory / face_filename
+                img.save(face_filepath)
+    
+    @staticmethod    
+    def extract_face(img_path: Path):
+        faces_directory = img_path.parent / "faces"
+        faces_directory.mkdir(parents=True, exist_ok=True) 
         faces = RetinaFace.extract_faces(img_path=str(img_path), align=True, expand_face_area=20)
         for i, face in enumerate(faces):
             if face.any():
                 img = Image.fromarray(face)
                 face_filename = f"{img_path.stem}_face_{i}.png"
                 face_filepath = faces_directory / face_filename
-                img.save(face_filepath)
+                try:
+                    img.save(face_filepath)
+                except Exception as e:
+                    print(e)
+                return face_filepath
     
     @staticmethod          
     def extract_features(img_path: Path):

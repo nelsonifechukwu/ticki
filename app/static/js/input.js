@@ -59,7 +59,7 @@ const getImgFileList = (imgFiles) => {
 };
 
 const customFormSubmitHandler = (ev) => {
-  //ev.preventDefault(); //prevent form submission
+  ev.preventDefault(); //prevent form submission
   const _ImgInput = document.getElementById("q-img");
   _ImgInput.files = getImgFileList(imgFiles);
   ev.target.submit();// submit form to server, etc

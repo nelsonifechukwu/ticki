@@ -49,6 +49,7 @@ def compare_pics(database:str, test_input:str):
             if face.any():
                 img = Image.fromarray(face)
                 img.save('f.png')
+                #see retinaface for detector backend
                 result = DeepFace.verify('f.png',
                             test_input, model_name="ArcFace", normalization="ArcFace", distance_metric="euclidean_l2", detector_backend="mtcnn", enforce_detection=False)
                 print(test_input, location, result["verified"])
