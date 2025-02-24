@@ -1,5 +1,5 @@
 # database
-./app/static/database
+/app/static/database
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
