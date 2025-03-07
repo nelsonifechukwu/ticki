@@ -25,6 +25,8 @@ database = Path("app/static/database")
 upload_directory = database / "uploads"
 features, img_paths = fe.load_allfaces_embeddings()
 
+img_repo = database / "img_repo"
+img_repo_list = list(img_repo.iterdir())
 
 @app.route("/", methods=["GET", "POST"])
 def index():

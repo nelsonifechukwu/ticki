@@ -18,5 +18,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CACHE_TYPE = "SimpleCache"
     GOOGLE_DISCOVERY_URL = (
-    "https://accounts.google.com/.well-known/openid-configuration"
-)
+    "https://accounts.google.com/.well-known/openid-configuration")
+
+    CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
+    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
+    
+    
+
