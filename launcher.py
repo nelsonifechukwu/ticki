@@ -10,12 +10,13 @@ if __name__ == "__main__":
         # Start Redis server
         print("Starting Redis server...")
         redis = run_process("redis-server")
-        time.sleep(2)  # Wait briefly to ensure Redis starts
+        time.sleep(5)  # Wait briefly to ensure Redis starts
 
         # Start Celery workers
         print("Starting Celery workers...")
-        celery = run_process("celery -A app.tasks worker --loglevel=info --concurrency=1")
-        time.sleep(3)  # Wait briefly to ensure Celery starts
+        celery = run_process("celery -A app.tasks worker --loglevel=info --concurrency=4 --pool threads")
+        #celery = run_process("celery -A app.tasks worker --loglevel=info --pool=prefork --concurrency=4 --prefetch-multiplier=1 --without-gossip --without-mingle")
+        time.sleep(5)  # Wait briefly to ensure Celery starts
 
         # Start Flask server
         print("Starting Flask application...")
