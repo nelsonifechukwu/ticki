@@ -24,6 +24,7 @@ faces_directory = database / "faces"
 # pkill redis-server && export CUDA_VISIBLE_DEVICES=-1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 #disable mps backend which doesn't allow certain tensor ops
 os.environ["TF_MPS_ENABLED"] = "0"
+#tf.config.set_visible_devices([], 'GPU')
 
 
 # See https://keras.io/api/applications/ for details
