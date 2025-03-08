@@ -18,6 +18,13 @@ upload_directory = database / "uploads"
 faces_upload_directory = upload_directory / "faces"
 faces_directory = database / "faces"
 
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+# os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true' 
+# export MPS_ENABLE_GROWTH=1 MPS_GRAPH_COMPILE_TIMEOUT=30 MPS_MEMORY_LIMIT=4096
+# pkill redis-server && export CUDA_VISIBLE_DEVICES=-1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+#disable mps backend which doesn't allow certain tensor ops
+os.environ["TF_MPS_ENABLED"] = "0"
+
 
 # See https://keras.io/api/applications/ for details
 
@@ -93,23 +100,38 @@ class ImageProcessor:
         os.makedirs(faces_directory, exist_ok=True)
 
         try:
+            # Validate image file exists
+            if not os.path.exists(img_path):
+                raise FileNotFoundError(f"Image file not found: {img_path}")
+                
             faces = RetinaFace.extract_faces(
                 img_path=img_path,
                 align=True,
                 expand_face_area=20,
             )
-        except Exception as e:
-            print(f"Error processing {img_path}: {e}")
-            return
+            
+            if not faces:
+                raise ValueError("No faces detected in image")
 
-        for i, face in enumerate(faces):
-            if face.any():
-                face = face.astype("uint8")
-                img = Image.fromarray(face).convert("RGB")
-                img = img.resize((224, 224))  # Resize for consistency
-                face_filename = f"{stem}_face_{i}.png"
-                face_filepath = os.path.join(faces_directory, face_filename)
-                img.save(face_filepath)
+            saved_paths = []
+            for i, face in enumerate(faces):
+                if face.any():
+                    face = face.astype("uint8")
+                    img = Image.fromarray(face).convert("RGB")
+                    img = img.resize((224, 224))  # Resize for consistency
+                    face_filename = f"{stem}_face_{i}.png"
+                    face_filepath = os.path.join(faces_directory, face_filename)
+                    img.save(face_filepath)
+                    saved_paths.append(face_filepath)
+                    
+            if not saved_paths:
+                raise RuntimeError("Face extraction failed - detected faces but couldn't save them")
+                
+            return saved_paths
+
+        except Exception as e:
+            print(f"Error processing {img_path}: {str(e)}")
+            raise  # Re-raise exception for Celery task tracking
     
     @staticmethod    
     def extract_face(img_path: Path):
