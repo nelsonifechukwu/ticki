@@ -134,22 +134,6 @@ class ImageProcessor:
             print(f"Error processing {img_path}: {str(e)}")
             raise  # Re-raise exception for Celery task tracking
     
-    @staticmethod    
-    def extract_face(img_path: Path):
-        faces_directory = img_path.parent / "faces"
-        faces_directory.mkdir(parents=True, exist_ok=True) 
-        faces = RetinaFace.extract_faces(img_path=str(img_path), align=True, expand_face_area=20)
-        for i, face in enumerate(faces):
-            if face.any():
-                img = Image.fromarray(face)
-                face_filename = f"{img_path.stem}_face_{i}.png"
-                face_filepath = faces_directory / face_filename
-                try:
-                    img.save(face_filepath)
-                except Exception as e:
-                    print(e)
-                return face_filepath
-    
     @staticmethod          
     def extract_features(img_path: Path):
         """
