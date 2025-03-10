@@ -2,30 +2,62 @@ import subprocess
 import sys
 import time
 
+
 def run_process(command):
     return subprocess.Popen(command, shell=True)
+
+def are_tasks_complete():
+    from app.tasks import celery_app
+    
+    insp = celery_app.control.inspect()
+    scheduled = insp.scheduled()
+    active = insp.active()
+    reserved = insp.reserved()
+    
+    all_tasks = [scheduled, active, reserved]
+
+    # Check if any worker still has tasks
+    for tasks in all_tasks:
+        if tasks:
+            for worker_tasks in tasks.values():
+                if worker_tasks:  # Tasks still pending or running
+                    return False
+    return True
 
 if __name__ == "__main__":
     try:
         # Start Redis server
         print("Starting Redis server...")
         redis = run_process("redis-server")
-        time.sleep(5)  # Wait briefly to ensure Redis starts
+        time.sleep(2)
 
         # Start Celery workers
         print("Starting Celery workers...")
         celery = run_process("celery -A app.tasks worker --loglevel=info --concurrency=4 --pool threads")
-        #celery = run_process("celery -A app.tasks worker --loglevel=info --pool=prefork --concurrency=4 --prefetch-multiplier=1 --without-gossip --without-mingle")
-        time.sleep(5)  # Wait briefly to ensure Celery starts
+        time.sleep(4)
 
         # Start Flask server
         print("Starting Flask application...")
         flask = run_process("flask run")
 
         print("🚀 All services are up and running!")
-        print("Press CTRL+C to stop.")
+        print("Waiting for Celery to finish all tasks...")
 
-        # Wait indefinitely while all processes run
+        # Poll to check if Celery has finished all tasks
+        while True:
+            if are_tasks_complete():
+                print("✅ All Celery tasks completed.")
+                break
+            print("Celery is still processing tasks...")
+            time.sleep(5)  # Wait before checking again
+
+        print("Stopping Celery workers...")
+        celery.terminate()
+        celery.wait()
+
+        print("Celery workers shut down. Flask is still running... Press CTRL+C to exit.")
+
+        # Keep Flask running
         flask.wait()
 
     except KeyboardInterrupt:
