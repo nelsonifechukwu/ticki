@@ -64,69 +64,36 @@ class ImageProcessor:
                         img.save(face_filepath)
         return faces_directory
     
-    # def extract_faces_process(img_path: Path):
-    #     """Multiprocessing-safe face extraction using RetinaFace."""
-    #     faces_directory = img_path.parent / "faces"
-    #     faces_directory.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
-
-    #     try:
-    #         faces = RetinaFace.extract_faces(
-    #             img_path=str(img_path),
-    #             align=True,
-    #             expand_face_area=20,
-    #         )
-    #     except Exception as e:
-    #         print(f"Error processing {img_path}: {e}")
-    #         return
-
-    #     for i, face in enumerate(faces):
-    #         if face.any():
-    #             face = face.astype("uint8")
-    #             img = Image.fromarray(face).convert("RGB")
-    #             img = img.resize((224, 224))  # Resize for consistency
-    #             face_filename = f"{img_path.stem}_face_{i}.png"
-    #             face_filepath = faces_directory / face_filename
-    #             img.save(face_filepath)
-    
     @staticmethod
-    def extract_faces_process(img_path: str):
-        """Multiprocessing-safe face extraction using RetinaFace without Path."""
-        # Get parent directory and filename stem manually
-        parent_dir = os.path.dirname(img_path)
-        stem = os.path.splitext(os.path.basename(img_path))[0]
-        # Create faces directory
-        faces_directory = os.path.join(parent_dir, "faces")
-        os.makedirs(faces_directory, exist_ok=True)
+    def extract_faces(img_path: str):
+        """Multiprocessing-safe face extraction using RetinaFace."""
+        img_path = Path(img_path)
+        faces_directory = img_path.parent / "faces"
+        faces_directory.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
 
         try:
-            # Validate image file exists
-            if not os.path.exists(img_path):
-                raise FileNotFoundError(f"Image file not found: {img_path}")
-                
             faces = RetinaFace.extract_faces(
-                img_path=img_path,
+                img_path=str(img_path),
                 align=True,
                 expand_face_area=20,
             )
-            
             if not faces:
                 raise ValueError("No faces detected in image")
-
+            
             saved_paths = []
             for i, face in enumerate(faces):
                 if face.any():
                     face = face.astype("uint8")
                     img = Image.fromarray(face).convert("RGB")
                     img = img.resize((224, 224))  # Resize for consistency
-                    face_filename = f"{stem}_face_{i}.png"
-                    face_filepath = os.path.join(faces_directory, face_filename)
+                    face_filename = f"{img_path.stem}_face_{i}.png"
+                    face_filepath = faces_directory / face_filename
                     img.save(face_filepath)
                     saved_paths.append(face_filepath)
                     
             if not saved_paths:
                 raise RuntimeError("Face extraction failed - detected faces but couldn't save them")
-                
-            return saved_paths
+            return str(saved_paths[len(saved_paths)-1]) #-> celery requires a string (which is JSON serializable) not a PosixPath
 
         except Exception as e:
             print(f"Error processing {img_path}: {str(e)}")
