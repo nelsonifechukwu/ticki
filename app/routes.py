@@ -1,7 +1,7 @@
 # implement several features:
 """
 monitor celery processing and indicate on flask app -> wait till all images are processed
-stop celery from reprocessing other tasks -> monitor the formed tasks and terminate once done -> no redo
+stop celery from reprocessing tasks -> monitor the formed tasks and terminate once done -> no redo
 terminate all celery tasks once keyboard interrupts
 monitor end of celery processing and convert face to embeddings
 check if database/uploads directory is there, else create one
