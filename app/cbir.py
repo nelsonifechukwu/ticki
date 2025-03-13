@@ -18,6 +18,7 @@ upload_directory = database / "uploads"
 faces_upload_directory = upload_directory / "faces"
 faces_directory = database / "faces"
 
+#--------Tweakable GPU options------
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true' 
 # export MPS_ENABLE_GROWTH=1 MPS_GRAPH_COMPILE_TIMEOUT=30 MPS_MEMORY_LIMIT=4096
@@ -25,9 +26,6 @@ faces_directory = database / "faces"
 # disable mps backend which doesn't allow certain tensor ops
 os.environ["TF_MPS_ENABLED"] = "0"
 #tf.config.set_visible_devices([], 'GPU')
-
-
-# See https://keras.io/api/applications/ for details
 
 class ImageProcessor:
     base_model = VGG16(weights='imagenet')
@@ -75,7 +73,7 @@ class ImageProcessor:
             faces = RetinaFace.extract_faces(
                 img_path=str(img_path),
                 align=True,
-                expand_face_area=20,
+                expand_face_area=30,
             )
             if not faces:
                 raise ValueError("No faces detected in image")
