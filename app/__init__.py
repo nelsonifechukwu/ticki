@@ -19,15 +19,14 @@ allowed_exts=("jpg", "png", "jpeg")
 # List image files
 img_repo_list = [os.path.join(img_repo, img) for img in os.listdir(img_repo) if img.endswith(allowed_exts)]
 
-def create_app(config_class=Config, flush_rdb=False):
+def create_app(config_class=Config, repeat_tasks=False):
     app = Flask(__name__)
     app.config.from_object(config_class)
-    if flush_rdb:
+    if repeat_tasks:
         redis_client.flushdb()
-    task_repeat = flush_rdb
     with app.app_context():
-        extract_faces_batch.delay(img_repo_list, task_repeat)  # Celery will handle concurrency efficiently
+        extract_faces_batch.delay(img_repo_list, repeat_tasks)  # Celery will handle concurrency efficiently
     return app
 
-app = create_app(flush_rdb=False)
+app = create_app(repeat_tasks=False)
 from app import routes
