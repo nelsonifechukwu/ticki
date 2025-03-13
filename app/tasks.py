@@ -1,18 +1,17 @@
 # app/tasks.py
 from celery import Celery, group
 from .cbir import ImageProcessor
-import redis
 from typing import List
+from . import *
 
-redis_client = redis.Redis(host='localhost', port=6379, db=1)
-
+fe = ImageProcessor()
 celery_app = Celery('tasks', broker='redis://localhost:6379/0')
-celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
+#celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
 #celery_app.conf.worker_deduplicate_successful_tasks = True
-celery_app.conf.task_acks_late=True
+#celery_app.conf.task_acks_late=True
+
 @celery_app.task (ignore_result=True)
 def extract_faces(image_path: str):
-    fe = ImageProcessor()
     if redis_client.exists(image_path):
         print(f"Skipping {image_path}: Already processed.")
         return
