@@ -7,7 +7,6 @@ redis_client = redis.Redis(host='localhost', port=6379, db=1)
 __all__ = ["redis_client"]
 from .tasks import extract_faces_batch
 
-
 # Get the absolute directory of the current script (this file)
 basedir = os.path.abspath(os.path.dirname(__file__))
 
