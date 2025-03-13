@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
         # Start Celery workers
         print("Starting Celery workers...")
-        celery = run_process("celery -A app.tasks worker --pool=prefork --loglevel=info --concurrency=4 --pool threads")
+        celery = run_process("celery -A app.tasks worker --loglevel=info --concurrency=4 --pool threads")
         time.sleep(4)
 
         # Start Flask server
@@ -63,11 +63,13 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nStopping all services...")
         run_process("pkill redis-server")
-        celery.terminate()
+        run_process("lsof -ti:6379 | xargs kill -9") #kill all redis processes
+        run_process("ps aux | grep celery | grep -v grep | awk '{print $2}' | xargs kill -9") #kill all celery workers
+        #celery.terminate()
         flask.terminate()
         #redis.terminate()
         
-        celery.wait()
+        #celery.wait()
         flask.wait()
         #redis.wait()
 
