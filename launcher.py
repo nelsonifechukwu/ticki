@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import time
-
+from app.tasks import c
 
 def run_process(command):
     return subprocess.Popen(command, shell=True)
@@ -47,6 +47,7 @@ if __name__ == "__main__":
         while True:
             if are_tasks_complete():
                 print("✅ All Celery tasks completed.")
+                convert_to_embeddings()
                 break
             print("Celery is still processing tasks...")
             time.sleep(5)  # Wait before checking again
@@ -54,9 +55,7 @@ if __name__ == "__main__":
         print("Stopping Celery workers...")
         celery.terminate()
         celery.wait()
-
         print("Celery workers shut down. Flask is still running... Press CTRL+C to exit.")
-
         # Keep Flask running
         flask.wait()
 

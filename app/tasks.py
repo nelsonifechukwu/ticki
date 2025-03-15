@@ -35,3 +35,9 @@ def extract_faces_batch(image_paths: List[str], repeat=False):
         task_group = group(extract_faces.s(path) for path in image_paths)
     result = task_group.apply_async()
     #return result
+
+
+@celery_app.task(ignore_result=True)
+def convert_faces_to_embeddings_batch():
+    embed = fe.extract_faces()
+    
