@@ -1,7 +1,15 @@
 import subprocess
 import sys
 import time
-from app.tasks import c
+from app.tasks import convert_faces_to_embeddings_batch
+
+# Get the absolute directory of the current script (this file)
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+database = os.path.join(basedir, "static", "database")
+img_repo = os.path.join(database, "img_repo")
+# List image files
+img_repo_list = [os.path.join(img_repo, img) for img in os.listdir(img_repo)]
 
 def run_process(command):
     return subprocess.Popen(command, shell=True)
@@ -47,7 +55,7 @@ if __name__ == "__main__":
         while True:
             if are_tasks_complete():
                 print("✅ All Celery tasks completed.")
-                convert_to_embeddings()
+                convert_faces_to_embeddings_batch()
                 break
             print("Celery is still processing tasks...")
             time.sleep(5)  # Wait before checking again

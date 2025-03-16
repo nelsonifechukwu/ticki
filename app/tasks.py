@@ -3,9 +3,12 @@ from celery import Celery, group
 from .cbir import ImageProcessor
 from typing import List
 from . import *
+from pathlib import Path
 
 fe = ImageProcessor()
 celery_app = Celery('tasks', broker='redis://localhost:6379/0')
+database = Path("app/static/database")
+embeddings_directory = database / "img_repo" / "embeddings"
 #celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
 #celery_app.conf.worker_deduplicate_successful_tasks = True
 #celery_app.conf.task_acks_late=True
@@ -36,8 +39,17 @@ def extract_faces_batch(image_paths: List[str], repeat=False):
     result = task_group.apply_async()
     #return result
 
+@celery_app.task(ignore_result=True)
+def convert_faces_to_embeddings(face_path: str):
+    embedding = fe.extract_faces(face_path)
+    embeddings_path = embeddings_directory + Path(face_path).stem 
+    try:
+        np.save(embeddings_path + ".npy", embedding)
+    except:
+        raise ValueError(f"Error saving {face_path} embedding")
 
 @celery_app.task(ignore_result=True)
-def convert_faces_to_embeddings_batch():
-    embed = fe.extract_faces()
+def convert_faces_to_embeddings_batch(faces_path: List[str], repeat=False):
+    task_group = group(convert_faces_to_embeddings.s(path) for path in faces_path)
+    result = task_group.apply_async()
     
