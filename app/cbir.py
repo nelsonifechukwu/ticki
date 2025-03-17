@@ -14,18 +14,16 @@ from PIL import Image
 import warnings
 
 database = Path("app/static/database")
-upload_directory = database / "uploads"
-faces_upload_directory = upload_directory / "faces"
 faces_directory = database / "faces"
 
-#--------Tweakable GPU options------
+#--------Tweakable GPU options-------#
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true' 
 # export MPS_ENABLE_GROWTH=1 MPS_GRAPH_COMPILE_TIMEOUT=30 MPS_MEMORY_LIMIT=4096
 # pkill redis-server && export CUDA_VISIBLE_DEVICES=-1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 # disable mps backend which doesn't allow certain tensor ops
 os.environ["TF_MPS_ENABLED"] = "0"
-#tf.config.set_visible_devices([], 'GPU')
+# tf.config.set_visible_devices([], 'GPU')
 
 class ImageProcessor:
     base_model = VGG16(weights='imagenet')
