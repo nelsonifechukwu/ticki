@@ -1,5 +1,6 @@
 # implement several features:
 """
+clean dir_initialization in class ImgProcessor -> specify directory once
 check if input img contain multiple faces and reject/search for multiple faces
 monitor celery processing and indicate on flask app -> wait till all images are processed
 monitor end of celery processing and convert face to embeddings
