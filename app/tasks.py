@@ -39,6 +39,16 @@ def extract_faces_batch(image_paths: List[str], repeat=False):
     result = task_group.apply_async()
     #return result
 
+def extract_all_faces(repeat_tasks=False):
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    database = os.path.join(basedir, "static", "database")
+    img_repo = os.path.join(database, "img_repo")
+    allowed_exts=("jpg", "png", "jpeg")
+
+    # List image files
+    img_repo_list = [os.path.join(img_repo, img) for img in os.listdir(img_repo) if img.endswith(allowed_exts)]
+    extract_faces_batch.delay(img_repo_list, repeat_tasks)
+    
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings(face_path: str):
     embedding = fe.extract_faces(face_path)
@@ -52,4 +62,14 @@ def convert_faces_to_embeddings(face_path: str):
 def convert_faces_to_embeddings_batch(faces_path: List[str], repeat=False):
     task_group = group(convert_faces_to_embeddings.s(path) for path in faces_path)
     result = task_group.apply_async()
-    
+
+def convert_all_faces_to_embeddings():
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    database = os.path.join(basedir, "app", "static", "database")
+    faces_repo = os.path.join(database, "img_repo", "faces")
+    try:
+        # Attempt to list files in faces_repo, assuming it exists
+        faces_repo_list = [os.path.join(faces_repo, img) for img in os.listdir(faces_repo)]
+    except FileNotFoundError:
+        print(f"The directory {faces_repo} does not exist.")     
+    convert_faces_to_embeddings_batch.delay(faces_repo_list, repeat_tasks=False)  
