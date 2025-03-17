@@ -41,7 +41,7 @@ def extract_faces_batch(image_paths: List[str], repeat=False):
     # Use Celery group to distribute tasks concurrently
     task_group = None
     if not repeat:
-        #don't add already processed task (imgs) to the task group again
+        # don't add already processed task (imgs) to the task group again
         task_group = group(extract_faces.s(path) for path in image_paths if not redis_client.exists(path)) 
     else:
         task_group = group(extract_faces.s(path) for path in image_paths)
