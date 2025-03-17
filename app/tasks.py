@@ -1,8 +1,8 @@
 # app/tasks.py
 from celery import Celery, group
+import redis
 from .cbir import ImageProcessor
 from typing import List
-from . import *
 from pathlib import Path
 import os
 import numpy as np
@@ -14,6 +14,7 @@ import numpy as np
 #faces_path
 fe = ImageProcessor()
 celery_app = Celery('tasks', broker='redis://localhost:6379/0')
+redis_client = redis.Redis(host='localhost', port=6379, db=1)
 database = Path("app/static/database")
 embeddings_directory = database / "img_repo" / "embeddings"
 embeddings_directory.mkdir(parents=True, exist_ok=True)

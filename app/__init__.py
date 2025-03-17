@@ -2,10 +2,7 @@ from flask import Flask
 from config import Config
 from pathlib import Path
 import os
-import redis
-redis_client = redis.Redis(host='localhost', port=6379, db=1)
-__all__ = ["redis_client"]
-from .tasks import extract_all_faces
+from .tasks import extract_all_faces, redis_client
 
 def create_app(config_class=Config, repeat_tasks=False):
     app = Flask(__name__)
