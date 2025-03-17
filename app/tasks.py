@@ -4,11 +4,19 @@ from .cbir import ImageProcessor
 from typing import List
 from . import *
 from pathlib import Path
+import os
+import numpy as np
 
+#-----Todo-----#
+#Initialize
+#embeddings path
+#img_repo_path
+#faces_path
 fe = ImageProcessor()
 celery_app = Celery('tasks', broker='redis://localhost:6379/0')
 database = Path("app/static/database")
 embeddings_directory = database / "img_repo" / "embeddings"
+embeddings_directory.mkdir(parents=True, exist_ok=True)
 #celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
 #celery_app.conf.worker_deduplicate_successful_tasks = True
 #celery_app.conf.task_acks_late=True
@@ -51,25 +59,25 @@ def extract_all_faces(repeat_tasks=False):
     
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings(face_path: str):
-    embedding = fe.extract_faces(face_path)
-    embeddings_path = embeddings_directory + Path(face_path).stem 
+    embedding = fe.extract_features(face_path)
+    embeddings_path = embeddings_directory / Path(face_path).stem
     try:
-        np.save(embeddings_path + ".npy", embedding)
+        np.save(embeddings_path.with_suffix(".npy"), embedding)
     except:
-        raise ValueError(f"Error saving {face_path} embedding")
+        raise Exception(f"Error saving {face_path} embedding")
 
 @celery_app.task(ignore_result=True)
-def convert_faces_to_embeddings_batch(faces_path: List[str], repeat=False):
+def convert_faces_to_embeddings_batch(faces_path: List[str], repeat_tasks=False):
     task_group = group(convert_faces_to_embeddings.s(path) for path in faces_path)
     result = task_group.apply_async()
 
 def convert_all_faces_to_embeddings():
     basedir = os.path.abspath(os.path.dirname(__file__))
-    database = os.path.join(basedir, "app", "static", "database")
+    database = os.path.join(basedir, "static", "database")
     faces_repo = os.path.join(database, "img_repo", "faces")
-    try:
-        # Attempt to list files in faces_repo, assuming it exists
+    if os.path.exists(faces_repo):
+        print(f"The directory {faces_repo} exists.")
         faces_repo_list = [os.path.join(faces_repo, img) for img in os.listdir(faces_repo)]
-    except FileNotFoundError:
-        print(f"The directory {faces_repo} does not exist.")     
-    convert_faces_to_embeddings_batch.delay(faces_repo_list, repeat_tasks=False)  
+        convert_faces_to_embeddings_batch.delay(faces_repo_list, repeat_tasks=False)  
+    else:
+        raise Exception(f"The directory {faces_repo} does not exist.")
