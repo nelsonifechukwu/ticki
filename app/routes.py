@@ -1,5 +1,7 @@
 # implement several features:
 """
+face_extract -> enbeddings -> numpy array -> database/redis cache
+user can search using available embeddings -> show progress bar for extractions/embeddings in progress
 clean dir_initialization in class ImgProcessor -> specify directory once
 check if input img contain multiple faces and reject/search for multiple faces
 monitor celery processing and indicate on flask app -> wait till all images are processed
