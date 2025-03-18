@@ -38,7 +38,7 @@ if __name__ == "__main__":
         print("🚀 All services are up and running!")
         print("Waiting for Celery to finish all tasks...")
         
-        time.sleep(2) #wait for flask run to completely execute the first celery tasks
+        time.sleep(2) #wait for flask run to initiate the first celery tasks
         # Poll to check if Celery has finished all tasks
         while True:
             print("Celery is still processing tasks...")
