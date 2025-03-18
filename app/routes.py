@@ -1,17 +1,3 @@
-# implement several features:
-"""
-face_extract -> enbeddings -> numpy array -> database/redis cache
-user can search using available embeddings -> show progress bar for extractions/embeddings in progress
-clean dir_initialization in class ImgProcessor -> specify directory once
-check if input img contain multiple faces and reject/search for multiple faces
-monitor celery processing and indicate on flask app -> wait till all images are processed
-monitor end of celery processing and convert face to embeddings
-select only similar images
-track and run embeddings code when new image is added (like git) -> threads or check if no of new list > old list
-implement hash map to group similar face embeddings to improve search, If A=B & B=C, then, A=C. Wow, I thought of a hashmap w/o knowing it was a hash map!
-Processing a lot of requests -> divide the no of images in the gdrive and processes requests asyc to compare or just download all of em and group their embeddings.
-Dockerize everything 
-"""
 from flask import request, render_template, flash, url_for
 from app import app
 import sys
