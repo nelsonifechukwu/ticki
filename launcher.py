@@ -29,7 +29,7 @@ if __name__ == "__main__":
         # Start Celery workers
         print("Starting Celery workers...")
         celery = run_process("celery -A app.tasks worker --loglevel=info --concurrency=4 --pool threads")
-        time.sleep(4)
+        time.sleep(3)
 
         # Start Flask server
         print("Starting Flask application...")
@@ -38,16 +38,16 @@ if __name__ == "__main__":
         print("🚀 All services are up and running!")
         print("Waiting for Celery to finish all tasks...")
         
-        # time.sleep(4) #wait to update celery tasks excuted by flask run
+        time.sleep(2) #wait for flask run to completely execute the first celery tasks
         # Poll to check if Celery has finished all tasks
         while True:
             print("Celery is still processing tasks...")
-            if are_tasks_complete():
+            if are_tasks_complete(): #first round of tasks -> face extraction
                 print("✅ All Celery tasks completed.")
                 from app.tasks import convert_all_faces_to_embeddings
                 convert_all_faces_to_embeddings()
                 while True:
-                    if are_tasks_complete():
+                    if are_tasks_complete(): #2nd round of tasks -> feature extraction
                         break
                 break
             time.sleep(5)  # Wait before checking again
@@ -74,10 +74,11 @@ if __name__ == "__main__":
 
         print("All services stopped.")
         sys.exit(0)
+        
     except:
-            run_process("pkill redis-server")
-            run_process("lsof -ti:6379 | xargs kill -9") #kill all redis processes
-            run_process("ps aux | grep celery | grep -v grep | awk '{print $2}' | xargs kill -9") #kill all celery workers
-            flask.terminate()
-            flask.wait()
-            raise Exception("Error launching this application")
+        run_process("pkill redis-server")
+        run_process("lsof -ti:6379 | xargs kill -9") #kill all redis processes
+        run_process("ps aux | grep celery | grep -v grep | awk '{print $2}' | xargs kill -9") #kill all celery workers
+        flask.terminate()
+        flask.wait()
+        raise Exception("Error launching this application")
