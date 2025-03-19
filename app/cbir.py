@@ -119,15 +119,15 @@ class ImageProcessor:
         except Exception as e:
             print(f"Error processing {img_path.name}: {str(e)}")
               # Re-raise exception for Celery task tracking
-    
-    @staticmethod          
-    def extract_features(img_path: Path):
+              
+    def extract_features(self, face_path: str):
         """
         Extract features from an Image
         Args: Path to the Image of a face
         """
+        face_path = Path(face_path)
             # Convert the image to a NumPy array
-        img = Image.open(img_path)
+        img = Image.open(face_path)
         img = img.resize((224, 224))  # VGG must take a 224x224 img as an input
         img = img.convert('RGB')  # Make sure img is color
         
@@ -141,8 +141,12 @@ class ImageProcessor:
         # Get the feature vector
         feature = ImageProcessor.model.predict(x)[0]  # (1, 4096) -> (4096, )
         image_embedding = feature / np.linalg.norm(feature)  # Normalize
-
-        return image_embedding
+        
+        embeddings_path = self.extracted_faces_embeddings_path / face_path.stem
+        try:
+            np.save(embeddings_path.with_suffix(".npy"), image_embedding)
+        except:
+            raise Exception(f"Error saving {face_path} embedding")
 
     @staticmethod  
     def save_allfaces_embeddings():
