@@ -37,8 +37,9 @@ class ImageProcessor:
         self.extracted_faces_path = self.img_repo / "extracted_faces"
         self.extracted_faces_embeddings_path = self.img_repo / "extracted_faces_embeddings"
         self.failed_extractions_path = self.img_repo /  "failed_face_extractions_imgs"
+        self.upload_directory = self.database / "upload_directory"
         
-        all_paths = [self.database, self.img_repo, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path]
+        all_paths = [self.database, self.img_repo, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path, self.upload_directory]
         
         self.initialize_paths(all_paths)
         
@@ -105,6 +106,7 @@ class ImageProcessor:
                 self.logger_write(f"No faces detected in {img_path.name}")
                 raise Exception("No faces detected in image")
             
+            faces_path=[]
             for i, face in enumerate(faces):
                 if face.any():
                     img = Image.fromarray(face.astype("uint8")).convert("RGB")
@@ -113,6 +115,7 @@ class ImageProcessor:
                     face_filename = f"{img_path.stem}_face_{i}.png"
                     face_filepath = self.extracted_faces_path / face_filename
                     img.save(face_filepath)
+                    faces_path.append(face_filepath)
                 elif len(faces) == 1:
                     shutil.move(str(img_path), self.failed_extractions_path)
                     self.logger_write(f"Face extraction from {img_path.name} failed")
@@ -120,7 +123,8 @@ class ImageProcessor:
                     raise Exception("Face extraction failed - couldn't extract detected faces")
                 else:
                     print (f"Some faces in {img_path.name} couldn't be extracted")
-            #return str(saved_paths[len(saved_paths)-1]) #-> celery requires a string (which is JSON serializable) not a PosixPath
+            return str(faces_path[len(faces_path)-1])
+            #return str-> celery requires a string (which is JSON serializable) not a PosixPath
 
         except Exception as e:
             print(f"Error processing {img_path.name}: {str(e)}")
@@ -150,49 +154,35 @@ class ImageProcessor:
         image_embedding = feature / np.linalg.norm(feature)  # Normalize
         
         embeddings_path = self.extracted_faces_embeddings_path / face_path.stem
+        
         try:
             np.save(embeddings_path.with_suffix(".npy"), image_embedding)
+            return image_embedding
         except:
             raise Exception(f"Error saving {face_path} embedding")
-
-    @staticmethod  
-    def save_allfaces_embeddings():
-        fe = ImageProcessor()
-        path = database / "faces"
-        files = [p for p in path.glob("*") if p.suffix.lower() in {".jpg", ".png"}]
-        for img_path in files:
-            # print(img_path)  # e.g., ./static/database/faces/xxx.jpg
-            feature = fe.extract_features(img_path)
-            # e.g., ./static/database/faces/xxx.npy
-            feature_path = path / (img_path.stem + ".npy")
-            np.save(feature_path, feature)
-
-    @staticmethod  
-    def load_allfaces_embeddings():
+ 
+    def load_allfaces_embeddings(self):
         features = []
         img_paths = []
         base_path = Path("app/static")
-        for feature_path in faces_directory.glob("*.npy"):
+        for feature_path in self.extracted_faces_embeddings_path.glob("*.npy"):
             features.append(np.load(feature_path))
-            img_paths.append(faces_directory.relative_to(base_path) / (feature_path.stem + ".png"))
+            img_paths.append(self.extracted_faces_path.relative_to(base_path) / (feature_path.stem + ".png"))
         features = np.array(features, dtype=object).astype(float)
     
         return features, img_paths
     
-    @staticmethod  
-    def save_query_image(file):
-        upload_directory = database / "uploads"
-        upload_directory.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
-
+    def save_query_image(self, file):
         try:
             img = Image.open(file.stream)  # Load image using PIL
         except Exception as e:
             raise Exception(f"Can't open file: {e}")
 
-        uploaded_img_path = upload_directory / file.filename
+        uploaded_img_path = self.upload_directory / file.filename
 
         if uploaded_img_path.exists():
-            warnings.warn(f"Warning: Image '{file.filename}' already exists.", UserWarning)  # Log warning
+            # warnings.warn(f"Warning: Image '{file.filename}' already exists.", UserWarning)  # Log warning
+            # raise Exception(f"Image {file.filename}already exists.")
             return img, uploaded_img_path
         
         # Attempt to save the image
