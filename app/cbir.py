@@ -37,9 +37,9 @@ class ImageProcessor:
         self.extracted_faces_embeddings_path = self.img_repo / "extracted_faces_embeddings"
         self.failed_extractions_path = self.img_repo /  "failed_face_extractions_imgs"
         
-        self.all_paths = [self.database, self.img_repo, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path]
+        all_paths = [self.database, self.img_repo, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path]
         
-        self.initialize_paths()
+        self.initialize_paths(all_paths)
         
         #Logger for Initialization errors
         self.logger_path = self.img_repo / "log.txt"
@@ -47,9 +47,9 @@ class ImageProcessor:
     def logger_write(self, msg:str):
         self.logger_path.write_text(msg)
         
-    def initialize_paths(self):
+    def initialize_paths(self, all_paths):
         try:
-            for path in self.all_paths:
+            for path in all_paths:
                 path.mkdir(parents=True, exist_ok=True)
         except:
             self.logger_write(f"Paths initialization failed. Confirm that {self.database} is a Path")
