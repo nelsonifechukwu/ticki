@@ -9,9 +9,10 @@ from pathlib import Path
 from deepface import DeepFace
 from deepface.basemodels import VGGFace
 from retinaface import RetinaFace
-import os
 from PIL import Image
 import warnings
+import os
+import shutil
 
 database = Path("app/static/database")
 faces_directory = database / "faces"
@@ -42,17 +43,18 @@ class ImageProcessor:
         self.initialize_paths(all_paths)
         
         #Logger for Initialization errors
-        self.logger_path = self.img_repo / "log.txt"
+        self.logger_path = self.failed_extractions_path / "log.txt"
     
     def logger_write(self, msg:str):
-        self.logger_path.write_text(msg)
+        with open(self.logger_path, 'a') as f:
+            f.write(msg + "\n")
         
     def initialize_paths(self, all_paths):
         try:
             for path in all_paths:
                 path.mkdir(parents=True, exist_ok=True)
         except:
-            self.logger_write(f"Paths initialization failed. Confirm that {self.database} is a Path")
+            # self.logger_write(f"Paths initialization failed. Confirm that {self.database} is a Path")
             raise Exception("Paths initialization failed.")
     
     @staticmethod    
@@ -99,6 +101,8 @@ class ImageProcessor:
                 expand_face_area=30,
             )
             if not faces:
+                shutil.move(str(img_path), self.failed_extractions_path)
+                self.logger_write(f"No faces detected in {img_path.name}")
                 raise Exception("No faces detected in image")
             
             for i, face in enumerate(faces):
@@ -110,6 +114,8 @@ class ImageProcessor:
                     face_filepath = self.extracted_faces_path / face_filename
                     img.save(face_filepath)
                 elif len(faces) == 1:
+                    shutil.move(str(img_path), self.failed_extractions_path)
+                    self.logger_write(f"Face extraction from {img_path.name} failed")
                     #if faces contain 1 face array, then terminate since it's empty
                     raise Exception("Face extraction failed - couldn't extract detected faces")
                 else:
@@ -118,6 +124,7 @@ class ImageProcessor:
 
         except Exception as e:
             print(f"Error processing {img_path.name}: {str(e)}")
+            raise
               # Re-raise exception for Celery task tracking
               
     def extract_features(self, face_path: str):
