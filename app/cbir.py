@@ -28,6 +28,33 @@ os.environ["TF_MPS_ENABLED"] = "0"
 class ImageProcessor:
     base_model = VGG16(weights='imagenet')
     model = Model(inputs=base_model.input, outputs=base_model.get_layer('fc1').output)
+    
+    def __init__(self, database:Path):
+        #database contains img_repo, extracted_faces, extracted_face_embeddings, failed_extractions, log.txt
+        self.database = database
+        self.img_repo = self.database / "img_repo"
+        self.extracted_faces_path = self.img_repo / "extracted_faces"
+        self.extracted_faces_embeddings_path = self.img_repo / "extracted_faces_embeddings"
+        self.failed_extractions_path = self.img_repo /  "failed_face_extractions_imgs"
+        
+        self.all_paths = [self.database, self.img_repo, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path]
+        
+        self.initialize_paths()
+        
+        #Logger for Initialization errors
+        self.logger_path = self.img_repo / "log.txt"
+    
+    def logger_write(self, msg:str):
+        self.logger_path.write_text(msg)
+        
+    def initialize_paths(self):
+        try:
+            for path in self.all_paths:
+                path.mkdir(parents=True, exist_ok=True)
+        except:
+            self.logger_write(f"Paths initialization failed. Confirm that {self.database} is a Path")
+            raise Exception("Paths initialization failed.")
+    
     @staticmethod    
     def extract_faces_database(database: Path):
         """
@@ -60,12 +87,10 @@ class ImageProcessor:
                         img.save(face_filepath)
         return faces_directory
     
-    @staticmethod
-    def extract_faces(img_path: str):
+    def extract_faces(self, img_path: str):
         """Multiprocessing-safe face extraction using RetinaFace."""
+        #check if img_path is a directory
         img_path = Path(img_path)
-        faces_directory = img_path.parent / "faces"
-        faces_directory.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
 
         try:
             faces = RetinaFace.extract_faces(
@@ -74,26 +99,26 @@ class ImageProcessor:
                 expand_face_area=30,
             )
             if not faces:
-                raise ValueError("No faces detected in image")
+                raise Exception("No faces detected in image")
             
-            saved_paths = []
             for i, face in enumerate(faces):
                 if face.any():
-                    face = face.astype("uint8")
-                    img = Image.fromarray(face).convert("RGB")
+                    img = Image.fromarray(face.astype("uint8")).convert("RGB")
                     img = img.resize((224, 224))  # Resize for consistency
+                    #img upscale
                     face_filename = f"{img_path.stem}_face_{i}.png"
-                    face_filepath = faces_directory / face_filename
+                    face_filepath = self.extracted_faces_path / face_filename
                     img.save(face_filepath)
-                    saved_paths.append(face_filepath)
-                    
-            if not saved_paths:
-                raise RuntimeError("Face extraction failed - detected faces but couldn't save them")
-            return str(saved_paths[len(saved_paths)-1]) #-> celery requires a string (which is JSON serializable) not a PosixPath
+                elif len(faces) == 1:
+                    #if faces contain 1 face array, then terminate since it's empty
+                    raise Exception("Face extraction failed - couldn't extract detected faces")
+                else:
+                    print (f"Some faces in {img_path.name} couldn't be extracted")
+            #return str(saved_paths[len(saved_paths)-1]) #-> celery requires a string (which is JSON serializable) not a PosixPath
 
         except Exception as e:
-            print(f"Error processing {img_path}: {str(e)}")
-            raise  # Re-raise exception for Celery task tracking
+            print(f"Error processing {img_path.name}: {str(e)}")
+              # Re-raise exception for Celery task tracking
     
     @staticmethod          
     def extract_features(img_path: Path):
