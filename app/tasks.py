@@ -25,6 +25,8 @@ def extract_faces(image_path: str):
         redis_client.set(image_path, 'completed')
         print(f"✅ {image_path} processed and recorded.")
     except Exception as e:
+        print(f"❌ {image_path} unprocessed.")
+        redis_client.set(image_path, f"in-complete: {e}")
         # Log the error properly and re-raise to mark task as failed
         # celery_app.logger.error(f"Face extraction failed for {image_path}: {str(e)}")
         raise
