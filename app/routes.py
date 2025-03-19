@@ -10,8 +10,8 @@ from pathlib import Path
 from .cbir import ImageProcessor
 from scipy.spatial import distance
 
-fe = ImageProcessor()
 database = Path("app/static/database")
+fe = ImageProcessor(database)
 upload_directory = database / "uploads"
 features, img_paths = fe.load_allfaces_embeddings()
 
