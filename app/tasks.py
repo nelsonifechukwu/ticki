@@ -7,17 +7,11 @@ from pathlib import Path
 import os
 import numpy as np
 
-#-----Todo-----#
-#Initialize
-#embeddings path
-#img_repo_path
-#faces_path
-fe = ImageProcessor()
+database = Path("app/static/database")
+fe = ImageProcessor(database)
 celery_app = Celery('tasks', broker='redis://localhost:6379/0')
 redis_client = redis.Redis(host='localhost', port=6379, db=1)
-database = Path("app/static/database")
-embeddings_directory = database / "img_repo" / "embeddings"
-embeddings_directory.mkdir(parents=True, exist_ok=True)
+
 #celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
 #celery_app.conf.worker_deduplicate_successful_tasks = True
 #celery_app.conf.task_acks_late=True
@@ -49,23 +43,15 @@ def extract_faces_batch(image_paths: List[str], repeat=False):
     #return result
 
 def extract_all_faces(repeat_tasks=False):
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    database = os.path.join(basedir, "static", "database")
-    img_repo = os.path.join(database, "img_repo")
+    img_repo = fe.img_repo
     allowed_exts=("jpg", "png", "jpeg")
-
     # List image files
-    img_repo_list = [os.path.join(img_repo, img) for img in os.listdir(img_repo) if img.endswith(allowed_exts)]
+    img_repo_list = [str(img) for img in img_repo.iterdir() if str(img).endswith(allowed_exts)]
     extract_faces_batch.delay(img_repo_list, repeat_tasks)
     
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings(face_path: str):
-    embedding = fe.extract_features(face_path)
-    embeddings_path = embeddings_directory / Path(face_path).stem
-    try:
-        np.save(embeddings_path.with_suffix(".npy"), embedding)
-    except:
-        raise Exception(f"Error saving {face_path} embedding")
+    fe.extract_features(face_path)
 
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings_batch(faces_path: List[str], repeat_tasks=False):
@@ -73,12 +59,7 @@ def convert_faces_to_embeddings_batch(faces_path: List[str], repeat_tasks=False)
     result = task_group.apply_async()
 
 def convert_all_faces_to_embeddings():
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    database = os.path.join(basedir, "static", "database")
-    faces_repo = os.path.join(database, "img_repo", "faces")
-    if os.path.exists(faces_repo):
-        print(f"The directory {faces_repo} exists.")
-        faces_repo_list = [os.path.join(faces_repo, img) for img in os.listdir(faces_repo)]
-        convert_faces_to_embeddings_batch.delay(faces_repo_list, repeat_tasks=False)  
-    else:
-        raise Exception(f"The directory {faces_repo} does not exist.")
+    allowed_exts=("jpg", "png", "jpeg")
+    faces_repo = fe.extracted_faces_path
+    faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).endswith(allowed_exts)]
+    convert_faces_to_embeddings_batch.delay(faces_repo_list, repeat_tasks=False)  
