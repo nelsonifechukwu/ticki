@@ -4,7 +4,6 @@ import redis
 from .cbir import ImageProcessor
 from typing import List
 from pathlib import Path
-import os
 import numpy as np
 
 database = Path("app/static/database")
