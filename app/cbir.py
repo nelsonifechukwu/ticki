@@ -15,7 +15,6 @@ import os
 import shutil
 
 database = Path("app/static/database")
-faces_directory = database / "faces"
 
 #--------Tweakable GPU options-------#
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
