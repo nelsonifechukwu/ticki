@@ -57,7 +57,7 @@ if __name__ == "__main__":
                         print("✅ Face -> embeddings completed.")
                         break
                 break
-            time.sleep(5)  # Wait before checking again
+            time.sleep(2)  # Wait before checking again
 
         print("Stopping Celery workers...")
         celery.terminate()
