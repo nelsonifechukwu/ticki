@@ -27,8 +27,6 @@ def extract_faces(image_path: str):
     except Exception as e:
         print(f"❌ {image_path} unprocessed.")
         redis_client.set(image_path, f"in-complete: {e}")
-        # Log the error properly and re-raise to mark task as failed
-        # celery_app.logger.error(f"Face extraction failed for {image_path}: {str(e)}")
         raise
 
 @celery_app.task (ignore_result=True)
@@ -36,7 +34,7 @@ def extract_faces_batch(image_paths: List[str], repeat=False):
     # Use Celery group to distribute tasks concurrently
     task_group = None
     if not repeat:
-        # don't add already processed task (imgs) to the task group again
+        # only add unprocessed task (imgs) to the task group 
         task_group = group(extract_faces.s(path) for path in image_paths if not redis_client.exists(path)) 
     else:
         task_group = group(extract_faces.s(path) for path in image_paths)
