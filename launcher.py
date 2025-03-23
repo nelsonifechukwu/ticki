@@ -36,8 +36,8 @@ if __name__ == "__main__":
         flask = run_process("flask run")
 
         print("🚀 All services are up and running!")
-        print("Waiting for Celery to finish all tasks...")
         
+        print("Face extraction Started...")
         from app.tasks import redis_client, extract_all_faces
         repeat_tasks = True
         if repeat_tasks:
@@ -48,12 +48,13 @@ if __name__ == "__main__":
             print("Celery is still extracting faces...")
             if are_tasks_complete(): #first round of tasks -> face extraction
                 print("✅ Face extraction completed.")
+                print("✅ Face -> Embeddings Started.")
                 from app.tasks import convert_all_faces_to_embeddings
                 convert_all_faces_to_embeddings()
                 print("Celery is converting face to embeddings...")
                 while True:
                     if are_tasks_complete(): #2nd round of tasks -> feature extraction
-                        print("✅ Face embeddings conversion completed.")
+                        print("✅ Face -> embeddings completed.")
                         break
                 break
             time.sleep(5)  # Wait before checking again
