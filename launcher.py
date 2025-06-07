@@ -5,7 +5,7 @@ import time
 def run_process(command):
     return subprocess.Popen(command, shell=True)
 
-def are_tasks_complete():
+def tasks_completed():
     from app.tasks import celery_app
     
     insp = celery_app.control.inspect()
@@ -46,14 +46,14 @@ if __name__ == "__main__":
         # Poll to check if Celery has finished extracting the faces
         while True:
             print("Celery is still extracting faces...")
-            if are_tasks_complete(): #first round of tasks -> face extraction
+            if tasks_completed(): #first round of tasks -> face extraction
                 print("✅ Face extraction completed.")
                 print("✅ Face -> Embeddings Started.")
                 from app.tasks import convert_all_faces_to_embeddings
                 convert_all_faces_to_embeddings()
                 print("Celery is converting face to embeddings...")
                 while True:
-                    if are_tasks_complete(): #2nd round of tasks -> feature extraction
+                    if tasks_completed(): #2nd round of tasks -> feature extraction
                         print("✅ Face -> embeddings completed.")
                         break
                 break
