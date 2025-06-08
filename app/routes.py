@@ -32,9 +32,9 @@ def index():
         # dists = np.linalg.norm(features-query, axis=1)
         dists = list(map(lambda x: 1 - distance.cosine(x, query_feature), face_embeddings))
         ids = np.argsort(dists)[:30]  # Top 30 results
-        scores = [(dists[id], face_paths[id]) for id in ids]
+        file_info = [(dists[id], face_paths[id]) for id in ids]
         base_path = Path("app/static")
         query_path = Path(img_path).relative_to(base_path)
-        return render_template("main.html", scores=scores) # query_path=query_path,
+        return render_template("main.html", file_info=file_info) # query_path=query_path,
     else:
         return render_template("main.html")
