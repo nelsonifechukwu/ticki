@@ -36,7 +36,7 @@
             <div class="input-img-container">
               <label id="input-img-label" for="input-img-preview">+</label>
               <input type="file" id="input-img-preview" />
-              <input type="file" id="q-img" name="query-img"/>
+              <input type="file" id="q-img" name="query-img" />
             </div>
             <div>
               <input
@@ -50,20 +50,17 @@
           </form>
         </div>
         <div class="selected-imgs">
-
-          {% for score in scores %}
-           <div>
+          {% for info in file_info %}
+          <div>
             <img
-              src="{{url_for('static', filename = file_info[1])}}"
-              height="150px" width="150px"
+              src="{{url_for('static', filename = info[1])}}"
+              alt="Trulli"
+              height="150px"
+              width="150px"
             />
-            <div class="similarity_score">
-              {{file_info[0]}}
-            </div>
-           </div>
+            <figcaption>{{info[0]}}</figcaption>
+          </div>
           {% endfor %}
-
-          <div>Pic1</div>
         </div>
       </div>
       <div class="footer">@Ticki.</div>
