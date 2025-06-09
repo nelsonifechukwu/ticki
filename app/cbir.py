@@ -123,7 +123,7 @@ class ImageProcessor:
                 else:
                     print (f"Some faces in {img_path.name} couldn't be extracted")
             return str(faces_path[len(faces_path)-1])
-            #return str-> celery requires a string (which is JSON serializable) not a PosixPath
+            #return str: celery requires a string (which is JSON serializable) not a PosixPath
 
         except Exception as e:
             print(f"Error processing {img_path.name}: {str(e)}")
