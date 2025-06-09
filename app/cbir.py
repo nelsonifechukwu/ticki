@@ -89,6 +89,17 @@ class ImageProcessor:
                         img.save(face_filepath)
         return faces_directory
     
+    def _remove_existing_failed_img(self, img_path):
+        destination = self.failed_extractions_path / img_path.name
+        # Delete existing file if it exists
+        if destination.exists():
+            destination.unlink()
+            
+    def _mark_as_failed(self, img_path: Path, reason: str) -> None:
+        self._remove_existing_failed_img(img_path)
+        shutil.move(str(img_path), self.failed_extractions_path)
+        self.logger_write(f"{reason} in {img_path.name}")
+    
     def extract_faces(self, img_path: str):
         """Multiprocessing-safe face extraction using RetinaFace."""
         #check if img_path is a directory
@@ -101,20 +112,13 @@ class ImageProcessor:
                 expand_face_area=30,
             )
             if not faces:
-                shutil.move(str(img_path), self.failed_extractions_path)
-                self.logger_write(f"No faces detected in {img_path.name}")
+                self._mark_as_failed(img_path, "No faces detected")
                 raise Exception("No faces detected in image")
 
             if len(faces) == 1 and any(x == 0 for x in faces[0].shape): #if faces array contains 0 row/column/channel, terminate since it's a wrong representation of an img
-                destination = self.failed_extractions_path / img_path.name
-                # Delete existing file if it exists
-                if destination.exists():
-                    destination.unlink()
-                shutil.move(str(img_path), str(self.failed_extractions_path))
-                self.logger_write(f"Face extraction from {img_path.name} failed")
+                self._mark_as_failed(img_path, "Face extraction failed")
                 raise Exception("Face extraction failed - couldn't extract detected faces")
                 
-            
             faces_path=[]
             for i, face in enumerate(faces):
                 if face.any():
@@ -127,10 +131,8 @@ class ImageProcessor:
                     faces_path.append(face_filepath)
                 else:
                     print (f"Some faces in {img_path.name} couldn't be extracted")
-            if faces_path:
-                return str(faces_path[len(faces_path)-1])
-            else:
-                return str(0)
+            return str(faces_path[len(faces_path)-1])
+
             #this would come in handy during the extraction of multiple faces in 1 upload
             #return str: celery requires a string (which is JSON serializable) not a PosixPath
 
