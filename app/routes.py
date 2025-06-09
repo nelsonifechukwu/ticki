@@ -17,7 +17,7 @@ img_repo = fe.img_repo
 allowed_exts = ("jpg", "png", "jpeg")
 img_repo_list = [str(img) for img in img_repo.iterdir() if str(img).endswith(allowed_exts)]
 
-face_embeddings, face_paths = fe.load_allfaces_embeddings()
+all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -30,9 +30,9 @@ def index():
         query_feature = fe.extract_features(face_dir).astype(float)
         # L2 distances to features
         # dists = np.linalg.norm(features-query, axis=1)
-        dists = list(map(lambda x: 1 - distance.cosine(x, query_feature), face_embeddings))
+        dists = list(map(lambda x: 1 - distance.cosine(x, query_feature), all_face_embeddings))
         ids = np.argsort(dists)[:30]  # Top 30 results
-        file_info = [(dists[id], face_paths[id]) for id in ids]
+        file_info = [(dists[id], all_face_paths[id]) for id in ids]
         base_path = Path("app/static")
         query_path = Path(img_path).relative_to(base_path)
         return render_template("main.html", file_info=file_info) # query_path=query_path,
