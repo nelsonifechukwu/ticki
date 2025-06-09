@@ -105,6 +105,11 @@ class ImageProcessor:
                 self.logger_write(f"No faces detected in {img_path.name}")
                 raise Exception("No faces detected in image")
             
+            if len(faces)==1 and len(faces[0]) == 1: #if faces array contains 1 row, terminate since it's a wrong representation of an img
+                shutil.move(str(img_path), self.failed_extractions_path)
+                self.logger_write(f"Face extraction from {img_path.name} failed")
+                raise Exception("Face extraction failed - couldn't extract detected faces")
+            
             faces_path=[]
             for i, face in enumerate(faces):
                 if face.any():
@@ -115,14 +120,9 @@ class ImageProcessor:
                     face_filepath = self.extracted_faces_path / face_filename
                     img.save(face_filepath)
                     faces_path.append(face_filepath)
-                elif len(faces) == 1:
-                    shutil.move(str(img_path), self.failed_extractions_path)
-                    self.logger_write(f"Face extraction from {img_path.name} failed")
-                    #if faces contain 1 face array, then terminate since it's empty
-                    raise Exception("Face extraction failed - couldn't extract detected faces")
                 else:
                     print (f"Some faces in {img_path.name} couldn't be extracted")
-            return str(faces_path[len(faces_path)-1])
+            return str(faces_path[len(faces_path)-1]) #this would come in handy during the extraction of multiple faces in 1 upload
             #return str: celery requires a string (which is JSON serializable) not a PosixPath
 
         except Exception as e:
@@ -181,7 +181,7 @@ class ImageProcessor:
 
         if uploaded_img_path.exists():
             # warnings.warn(f"Warning: Image '{file.filename}' already exists.", UserWarning)  # Log warning
-            # raise Exception(f"Image {file.filename}already exists.")
+            print(f"Image {file.filename} already exists.")
             return img, uploaded_img_path
         
         # Attempt to save the image
