@@ -168,7 +168,7 @@ class ImageProcessor:
 
             # Save embedding to .npy
             embeddings_path = self.extracted_faces_embeddings_path / img_path.stem
-            np.save(embeddings_path.with_suffix(".npy"), embedding)
+            np.save(embeddings_path.with_name(embeddings_path.name + ".npy"), embedding)
 
             return embedding
 
