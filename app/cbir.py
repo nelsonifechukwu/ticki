@@ -104,11 +104,16 @@ class ImageProcessor:
                 shutil.move(str(img_path), self.failed_extractions_path)
                 self.logger_write(f"No faces detected in {img_path.name}")
                 raise Exception("No faces detected in image")
-            
-            if len(faces)==1 and len(faces[0]) == 1: #if faces array contains 1 row, terminate since it's a wrong representation of an img
-                shutil.move(str(img_path), self.failed_extractions_path)
+
+            if len(faces) == 1 and any(x == 0 for x in faces[0].shape): #if faces array contains 0 row/column/channel, terminate since it's a wrong representation of an img
+                destination = self.failed_extractions_path / img_path.name
+                # Delete existing file if it exists
+                if destination.exists():
+                    destination.unlink()
+                shutil.move(str(img_path), str(self.failed_extractions_path))
                 self.logger_write(f"Face extraction from {img_path.name} failed")
                 raise Exception("Face extraction failed - couldn't extract detected faces")
+                
             
             faces_path=[]
             for i, face in enumerate(faces):
@@ -122,7 +127,11 @@ class ImageProcessor:
                     faces_path.append(face_filepath)
                 else:
                     print (f"Some faces in {img_path.name} couldn't be extracted")
-            return str(faces_path[len(faces_path)-1]) #this would come in handy during the extraction of multiple faces in 1 upload
+            if faces_path:
+                return str(faces_path[len(faces_path)-1])
+            else:
+                return str(0)
+            #this would come in handy during the extraction of multiple faces in 1 upload
             #return str: celery requires a string (which is JSON serializable) not a PosixPath
 
         except Exception as e:
