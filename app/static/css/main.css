@@ -127,6 +127,7 @@ body {
       grid-template-columns: repeat(4, 1fr); /* Always 4 columns */
       grid-auto-rows: minmax(150px, auto); /* Defines row height */
       gap: 10px;
+      row-gap: 40px;
       width: 100%;
       overflow-y: auto; /* Enables scrolling when rows exceed 5 */
 
@@ -136,7 +137,9 @@ body {
     }
   }
 }
-
+.similarity_score {
+  margin: 20px 0px;
+}
 .content {
   height: calc(100% - 180px);
   border-radius: 10px;
