@@ -142,6 +142,39 @@ class ImageProcessor:
               # Re-raise exception for Celery task tracking
               
     def extract_features(self, face_path: str):
+
+        """
+        Extract facial embeddings using DeepFace's FaceNet model.
+        Args:
+            face_path (str): Path to the image of a face.
+        Returns:
+            np.ndarray: Normalized face embedding.
+        """
+        img_path = face_path = Path(face_path)
+        face_path = Image.open(face_path)
+        face_path = face_path.resize((224, 224)) 
+        face_path = image.img_to_array(face_path) #to ndarray
+
+        try:
+            # Use DeepFace to represent the image using FaceNet
+            embedding_obj = DeepFace.represent(
+                img_path=face_path,
+                model_name="Facenet512",
+                enforce_detection=False
+            )[0]  # result is a list of dicts
+
+            embedding = np.array(embedding_obj["embedding"])
+            embedding = embedding / np.linalg.norm(embedding)  # normalize
+
+            # Save embedding to .npy
+            embeddings_path = self.extracted_faces_embeddings_path / img_path.stem
+            np.save(embeddings_path.with_suffix(".npy"), embedding)
+
+            return embedding
+
+        except Exception as e:
+            raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
+    def _extract_features(self, face_path: str):
         """
         Extract features from an Image
         Args: Path to the Image of a face
@@ -168,8 +201,8 @@ class ImageProcessor:
         try:
             np.save(embeddings_path.with_suffix(".npy"), image_embedding)
             return image_embedding
-        except:
-            raise Exception(f"Error saving {face_path} embedding")
+        except Exception as e:
+            raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
  
     def load_allfaces_embeddings(self):
         features = []
