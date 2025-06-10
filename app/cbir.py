@@ -32,13 +32,14 @@ class ImageProcessor:
     def __init__(self, database:Path):
         #database contains img_repo, extracted_faces, extracted_face_embeddings, failed_extractions, log.txt
         self.database = database
-        self.img_repo = self.database / "img_repo"
+        self.img_repo = self.database / "img_repo" 
+        self.img_data = self.img_repo / "img_data"
         self.extracted_faces_path = self.img_repo / "extracted_faces"
         self.extracted_faces_embeddings_path = self.img_repo / "extracted_faces_embeddings"
         self.failed_extractions_path = self.img_repo /  "failed_face_extractions_imgs"
         self.upload_directory = self.database / "upload_directory"
         
-        all_paths = [self.database, self.img_repo, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path, self.upload_directory]
+        all_paths = [self.database, self.img_repo, self.img_data, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path, self.upload_directory]
         
         self.initialize_paths(all_paths)
         
@@ -215,10 +216,10 @@ class ImageProcessor:
                 if file.stem == feature_path.stem:
                     feature_ext = file.suffix
             if  feature_ext is not None:
-                img_paths.append(self.extracted_faces_path.relative_to(base_path) / (feature_path.stem + feature_ext))
+                img_paths.append(self.img_data.relative_to(base_path) / (feature_path.stem.split("_face")[0] + feature_ext)) #get the reference img of the face
             else:
                 raise FileNotFoundError(f"No matching extracted faces found for embedding: {feature_path.stem}")
-        #database/imgrepo/e
+ 
         features = np.array(features, dtype=object).astype(float)
     
         return features, img_paths
