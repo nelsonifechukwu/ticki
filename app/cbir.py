@@ -240,6 +240,7 @@ class ImageProcessor:
         # Attempt to save the image
         try:
             img.save(uploaded_img_path)
+            shutil.copy(str(uploaded_img_path), self.img_data)
         except Exception as e:
             raise Exception(f"Failed to save image: {e}")
 
