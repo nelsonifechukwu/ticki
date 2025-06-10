@@ -150,15 +150,15 @@ class ImageProcessor:
         Returns:
             np.ndarray: Normalized face embedding.
         """
-        img_path = face_path = Path(face_path)
-        face_path = Image.open(face_path)
-        face_path = face_path.resize((224, 224)) 
-        face_path = image.img_to_array(face_path) #to ndarray
+        face_path = Path(face_path)
+        face_img= Image.open(face_path)
+        face_img = face_img.resize((224, 224)) 
+        face_img = image.img_to_array(face_img) #to ndarray
 
         try:
             # Use DeepFace to represent the image using FaceNet
             embedding_obj = DeepFace.represent(
-                img_path=face_path,
+                img_path=face_img,
                 model_name="Facenet512",
                 enforce_detection=False
             )[0]  # result is a list of dicts
@@ -167,7 +167,7 @@ class ImageProcessor:
             embedding = embedding / np.linalg.norm(embedding)  # normalize
 
             # Save embedding to .npy
-            embeddings_path = self.extracted_faces_embeddings_path / img_path.stem
+            embeddings_path = self.extracted_faces_embeddings_path / face_path.stem
             np.save(embeddings_path.with_name(embeddings_path.name + ".npy"), embedding)
 
             return embedding
