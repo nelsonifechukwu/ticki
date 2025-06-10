@@ -42,11 +42,11 @@ def extract_faces_batch(image_paths: List[str], repeat=False):
     #return result
 
 def extract_all_faces(repeat_tasks=False):
-    img_repo = fe.img_repo
+    img_data = fe.img_data
     allowed_exts=("jpg", "png", "jpeg")
     # List image files
-    img_repo_list = [str(img) for img in img_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
-    extract_faces_batch.delay(img_repo_list, repeat_tasks)
+    img_data_list = [str(img) for img in img_data.iterdir() if str(img).lower().endswith(allowed_exts)]
+    extract_faces_batch.delay(img_data_list, repeat_tasks)
     
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings(face_path: str):
