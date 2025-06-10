@@ -45,7 +45,7 @@ def extract_all_faces(repeat_tasks=False):
     img_repo = fe.img_repo
     allowed_exts=("jpg", "png", "jpeg")
     # List image files
-    img_repo_list = [str(img) for img in img_repo.iterdir() if str(img).endswith(allowed_exts)]
+    img_repo_list = [str(img) for img in img_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
     extract_faces_batch.delay(img_repo_list, repeat_tasks)
     
 @celery_app.task(ignore_result=True)
