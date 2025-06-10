@@ -15,7 +15,7 @@ upload_directory = database / "uploads"
 
 img_repo = fe.img_repo
 allowed_exts = ("jpg", "png", "jpeg")
-img_repo_list = [str(img) for img in img_repo.iterdir() if str(img).endswith(allowed_exts)]
+img_repo_list = [str(img) for img in img_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
 
 all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings()
 
