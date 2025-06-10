@@ -125,7 +125,7 @@ class ImageProcessor:
                     img = Image.fromarray(face.astype("uint8")).convert("RGB")
                     img = img.resize((224, 224))  # Resize for consistency
                     #img upscale
-                    face_filename = f"{img_path.stem}_face_{i}.png"
+                    face_filename = f"{img_path.stem}_face_{i}{img_path.suffix}" #suffix adds the leading dot of the extension
                     face_filepath = self.extracted_faces_path / face_filename
                     img.save(face_filepath)
                     faces_path.append(face_filepath)
