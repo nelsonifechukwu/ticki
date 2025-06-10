@@ -60,5 +60,5 @@ def convert_faces_to_embeddings_batch(faces_path: List[str], repeat_tasks=False)
 def convert_all_faces_to_embeddings():
     allowed_exts=("jpg", "png", "jpeg")
     faces_repo = fe.extracted_faces_path
-    faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).endswith(allowed_exts)]
+    faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
     convert_faces_to_embeddings_batch.delay(faces_repo_list, repeat_tasks=False)  
