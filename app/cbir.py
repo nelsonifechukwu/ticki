@@ -210,7 +210,15 @@ class ImageProcessor:
         base_path = Path("app/static")
         for feature_path in self.extracted_faces_embeddings_path.glob("*.npy"):
             features.append(np.load(feature_path))
-            img_paths.append(self.extracted_faces_path.relative_to(base_path) / (feature_path.stem + ".png"))
+            feature_ext = None
+            for file in self.extracted_faces_path.iterdir():
+                if file.stem == feature_path.stem:
+                    feature_ext = file.suffix
+            if  feature_ext is not None:
+                img_paths.append(self.extracted_faces_path.relative_to(base_path) / (feature_path.stem + feature_ext))
+            else:
+                raise FileNotFoundError(f"No matching extracted faces found for embedding: {feature_path.stem}")
+        #database/imgrepo/e
         features = np.array(features, dtype=object).astype(float)
     
         return features, img_paths
