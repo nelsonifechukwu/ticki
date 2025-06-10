@@ -10,17 +10,11 @@ from pathlib import Path
 from scipy.spatial import distance
 from .tasks import fe
 
-database = fe.database
-upload_directory = database / "uploads"
-
-img_repo = fe.img_repo
-allowed_exts = ("jpg", "png", "jpeg")
-img_repo_list = [str(img) for img in img_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
-
 all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    threshold = 0.67
     if request.method == "POST":
         img_stream = request.files.get("query-img")  # get query image
         # img_path = upload_directory  
@@ -31,8 +25,8 @@ def index():
         # L2 distances to features
         # dists = np.linalg.norm(features-query, axis=1)
         dists = list(map(lambda x: 1 - distance.cosine(x, query_feature), all_face_embeddings)) 
-        ids = np.argsort([-x for x in dists])[:30]  # Top 30 results (minus for sorting in descending order)
-        file_info = [(dists[id], all_face_paths[id]) for id in ids]
+        ids = np.argsort([-x for x in dists]) #[:30]  # Top 30 results (minus for sorting in descending order)
+        file_info = [(dists[id], all_face_paths[id]) for id in ids if dists[id]>=threshold]
         base_path = Path("app/static")
         query_path = Path(img_path).relative_to(base_path)
         return render_template("main.html", file_info=file_info) # query_path=query_path,
