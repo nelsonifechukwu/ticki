@@ -168,9 +168,11 @@ class ImageProcessor:
             embedding = embedding / np.linalg.norm(embedding)  # normalize
 
             # Save embedding to .npy
-            embeddings_path = self.extracted_faces_embeddings_path / face_path.stem
-            np.save(embeddings_path.with_name(embeddings_path.name + ".npy"), embedding)
+            embeddings_path = self.extracted_faces_embeddings_path / face_path.name
 
+            feature_path = embeddings_path.with_name(embeddings_path.name + ".npy")
+   
+            np.save(feature_path, embedding)
             return embedding
 
         except Exception as e:
