@@ -191,7 +191,7 @@ class ImageProcessor:
         for feature_path in self.extracted_faces_embeddings_path.glob("*.npy"):
             features.append(np.load(feature_path))
             # From 'IMG_3011_face_0.JPG.npy' to
-            img_ext = feature_path.stem.suffix  # '.JPG'
+            img_ext = Path(feature_path.stem).suffix  # '.JPG'
             img_name = str(feature_path).split("_face")[0]  # 'IMG_3011'
             
             img_paths.append(self.img_data.relative_to(base_path) / (img_name + img_ext)) #get the reference img of the face
