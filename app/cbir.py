@@ -206,6 +206,12 @@ class ImageProcessor:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
  
     def load_allfaces_embeddings(self, external=None): #load embedddings externally (h5py)
+        """
+        h5f = h5py.File(output, 'w')
+        h5f.create_dataset('dataset_1', data=features)
+        h5f.create_dataset('dataset_2', data=np.bytes_(names))
+        h5f.close ()
+        """
         features = []
         img_paths = []
         base_path = Path("app/static")
