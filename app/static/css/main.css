@@ -125,9 +125,9 @@ body {
       margin-top: 20px;
       display: grid;
       grid-template-columns: repeat(4, 1fr); /* Always 4 columns */
-      grid-auto-rows: minmax(150px, auto); /* Defines row height */
+      grid-auto-rows: 150px; /* Defines row height */
       gap: 10px;
-      row-gap: 40px;
+      /*row-gap: 20px;*/
       width: 100%;
       overflow-y: auto; /* Enables scrolling when rows exceed 5 */
 
@@ -194,7 +194,7 @@ body {
     .main-content {
       .selected-imgs {
         grid-template-columns: repeat(2, 1fr);
-        row-gap: 40px;
+        /*row-gap: 20px;*/
       }
     }
   }
