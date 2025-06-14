@@ -205,13 +205,14 @@ class ImageProcessor:
         except Exception as e:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
  
-    def load_allfaces_embeddings(self):
+    def load_allfaces_embeddings(self, external=None): #load embedddings externally (h5py)
         features = []
         img_paths = []
         base_path = Path("app/static")
         for feature_path in self.extracted_faces_embeddings_path.glob("*.npy"):
             features.append(np.load(feature_path))
             feature_ext = None
+            #get the extension of the actual file from its embedding index
             for file in self.extracted_faces_path.iterdir():
                 if file.stem == feature_path.stem:
                     feature_ext = file.suffix
