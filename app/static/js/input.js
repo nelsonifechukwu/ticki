@@ -58,11 +58,35 @@ const getImgFileList = (imgFiles) => {
   return _imgFiles.files;
 };
 
-const customFormSubmitHandler = (ev) => {
+const customFormSubmitHandler = async (ev) => {
   ev.preventDefault(); //prevent form submission
   const _ImgInput = document.getElementById("q-img");
   _ImgInput.files = getImgFileList(imgFiles);
-  ev.target.submit();// submit form to server, etc
+  form = ev.target; // don't submit form to server w/.submit(), etc
+
+  const formData = new FormData(form); // Prepare form data
+  try {
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: formData,
+    });
+
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    // Find the newly rendered selected-imgs div from response
+    const newImgsDiv = doc.querySelector(".selected-imgs");
+    const currentImgsDiv = document.querySelector(".selected-imgs");
+
+    if (newImgsDiv && currentImgsDiv) {
+      currentImgsDiv.innerHTML = newImgsDiv.innerHTML;
+    } else {
+      console.warn("Could not find .selected-imgs in response.");
+    }
+  } catch (err) {
+    console.error("Failed to submit form:", err);
+  }
 };
 
 imgInput.addEventListener("change", addImgHandler);
