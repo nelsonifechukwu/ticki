@@ -175,36 +175,7 @@ class ImageProcessor:
 
         except Exception as e:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
-    def _extract_features(self, face_path: str):
-        """
-        Extract features from an Image
-        Args: Path to the Image of a face
-        """
-        face_path = Path(face_path)
-            # Convert the image to a NumPy array
-        img = Image.open(face_path)
-        img = img.resize((224, 224))  # VGG must take a 224x224 img as an input
-        img = img.convert('RGB')  # Make sure img is color
-        
-        # To np.array. Height x Width x Channel. dtype=float32
-        x = image.img_to_array(img)
-        
-        # (H, W, C)->(1, H, W, C), where the first elem is the number of img
-        x = np.expand_dims(x, axis=0)
-        x = preprocess_input(x)  # Subtracting avg values for each pixel
-        
-        # Get the feature vector
-        feature = ImageProcessor.model.predict(x)[0]  # (1, 4096) -> (4096, )
-        image_embedding = feature / np.linalg.norm(feature)  # Normalize
-        
-        embeddings_path = self.extracted_faces_embeddings_path / face_path.stem
-        
-        try:
-            np.save(embeddings_path.with_suffix(".npy"), image_embedding)
-            return image_embedding
-        except Exception as e:
-            raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
- 
+    
     def load_allfaces_embeddings(self, external=None): #load embedddings externally (h5py)
         """
         h5f = h5py.File(output, 'w')
