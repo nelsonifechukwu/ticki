@@ -188,7 +188,7 @@ class ImageProcessor:
         if external:
             features = None
             img_path = None
-            return features, img_paths
+            return features, img_path
         
         features = []
         img_paths = []
