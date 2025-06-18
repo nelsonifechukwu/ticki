@@ -185,6 +185,11 @@ class ImageProcessor:
         h5f.create_dataset('dataset_2', data=np.bytes_(names))
         h5f.close ()
         """
+        if external:
+            features = None
+            img_path = None
+            return features, img_paths
+        
         features = []
         img_paths = []
         base_path = Path("app/static")
