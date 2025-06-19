@@ -17,6 +17,7 @@ redis_client = redis.Redis(host='localhost', port=6379, db=1)
 
 @celery_app.task (ignore_result=True)
 def extract_faces(image_path: str):
+    # Ensure idempotency: skip processing if this image_path was already handled (e.g., due to Celery task duplication)
     if redis_client.exists(image_path):
         print(f"Skipping {image_path}: Already processed.")
         return
