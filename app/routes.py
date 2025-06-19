@@ -22,17 +22,17 @@ def index():
 def handle_post_request():
     threshold = 0.67
     img_stream = request.files.get("query-img")
-    _, img_path, img_path_in_db = fe.save_query_image(img_stream)
+    _, uploaded_img_path = fe.save_query_image(img_stream)
 
-    face_path = extract_and_store_faces(img_path, img_path_in_db)
+    face_path = extract_and_store_faces(uploaded_img_path)
     query_feature = fe.extract_features(face_path).astype(float)
     
     results = get_similar_faces(query_feature, threshold)
     return render_template("main.html", file_info=results)
 
-def extract_and_store_faces(img_path: Path, img_path_in_db: Path) -> Path:
-    face_path = Path(fe.extract_faces(img_path))
-    store_in_redis([img_path_in_db, face_path])
+def extract_and_store_faces(uploaded_img_path: Path) -> Path:
+    face_path = Path(fe.extract_faces(uploaded_img_path))
+    store_in_redis([uploaded_img_path, face_path])
     return face_path
 
 def get_similar_faces(query_feature: np.ndarray, threshold: float):

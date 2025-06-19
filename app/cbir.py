@@ -38,9 +38,8 @@ class ImageProcessor:
         self.extracted_faces_path = self.img_repo / "extracted_faces"
         self.extracted_faces_embeddings_path = self.img_repo / "extracted_faces_embeddings"
         self.failed_extractions_path = self.img_repo /  "failed_face_extractions_imgs"
-        self.upload_directory = self.database / "upload_directory"
         
-        all_paths = [self.database, self.img_repo, self.img_data, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path, self.upload_directory]
+        all_paths = [self.database, self.img_repo, self.img_data, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path]
         
         self.initialize_paths(all_paths)
         
@@ -213,19 +212,18 @@ class ImageProcessor:
         except Exception as e:
             raise Exception(f"Can't open file: {e}")
 
-        uploaded_img_path = self.upload_directory / file.filename
+        uploaded_img_path = self.img_data / file.filename
 
         if uploaded_img_path.exists():
             # warnings.warn(f"Warning: Image '{file.filename}' already exists.", UserWarning)  # Log warning
             print(f"Image {file.filename} already exists.")
-            img_path_in_db = self.img_data / file.filename
-            return img, uploaded_img_path, img_path_in_db
+            
+            return img, uploaded_img_path
         
         # Attempt to save the image
         try:
             img.save(uploaded_img_path)
-            img_path_in_db = shutil.copy(str(uploaded_img_path), self.img_data)
         except Exception as e:
             raise Exception(f"Failed to save image: {e}")
 
-        return img, uploaded_img_path, img_path_in_db
+        return img, uploaded_img_path
