@@ -58,38 +58,6 @@ class ImageProcessor:
             # self.logger_write(f"Paths initialization failed. Confirm that {self.database} is a Path")
             raise Exception("Paths initialization failed.")
     
-    @staticmethod    
-    def extract_faces_database(database: Path):
-        """
-        Extract faces from all images in a directory
-        Args:
-            database: path to the directory containing images
-        """
-        if not isinstance(database, Path):
-            raise TypeError("The 'database' parameter must be a Path object.")
-        if not database.exists():
-            raise FileNotFoundError(f"The directory '{database}' does not exist.")
-        
-        faces_directory = database / "faces"
-        faces_directory.mkdir(parents=True, exist_ok=True)
-                        
-        all_pics = Path(database).iterdir()
-        for pic in all_pics:
-            if pic.is_file() and pic.suffix.lower() in ['.png', '.jpg']:
-                # Load the image
-                img = mpimg.imread(pic)
-                # plt.imshow(img)
-                # plt.show(block=False)
-                # plt.pause(10)
-                faces = RetinaFace.extract_faces(img_path=str(pic), align=True, expand_face_area=20)
-                for i, face in enumerate(faces):
-                    if face.any():
-                        img = Image.fromarray(face)
-                        face_filename = f"{pic.stem}_{i}.png"
-                        face_filepath = faces_directory / face_filename
-                        img.save(face_filepath)
-        return faces_directory
-    
     def _remove_existing_failed_img(self, img_path):
         destination = self.failed_extractions_path / img_path.name
         # Delete existing file if it exists
