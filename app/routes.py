@@ -1,5 +1,4 @@
-from flask import request, render_template, flash, url_for
-from app import app
+from flask import request, render_template
 import sys
 
 sys.path.append("./")
