@@ -39,10 +39,10 @@ if __name__ == "__main__":
         
         print("Face extraction Started...")
         from app.tasks import redis_client, extract_all_faces
-        repeat_tasks = False
-        if repeat_tasks:
+        redo = False
+        if redo:
             redis_client.flushdb()
-        extract_all_faces(repeat_tasks) 
+        extract_all_faces(redo) 
         # Poll to check if Celery has finished extracting the faces
         while True:
             print("Celery is still extracting faces...")
@@ -50,7 +50,7 @@ if __name__ == "__main__":
                 print("✅ Face extraction completed.")
                 print("✅ Face -> Embeddings Started.")
                 from app.tasks import convert_all_faces_to_embeddings
-                convert_all_faces_to_embeddings()
+                convert_all_faces_to_embeddings(redo)
                 print("Celery is converting face to embeddings...")
                 while True:
                     if tasks_completed(): #2nd round of tasks -> feature extraction
