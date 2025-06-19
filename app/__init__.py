@@ -1,7 +1,7 @@
 from flask import Flask
 from config import Config
 
-def create_app(config_class=Config, repeat_tasks=False):
+def create_app(config_class=Config, redo=False):
     app = Flask(__name__)
     app.config.from_object(config_class)
     return app
