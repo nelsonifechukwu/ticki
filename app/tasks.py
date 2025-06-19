@@ -24,7 +24,7 @@ def extract_faces(image_path: str):
     try:
         fe.extract_faces(image_path)
         redis_client.set(image_path, 'completed')
-        print(f"✅ {image_path} processed and recorded.")
+        print(f"✅ Face extraction successful: {image_path} is processed and recorded.")
     except Exception as e:
         print(f"❌ {image_path} unprocessed.")
         redis_client.set(image_path, f"in-complete: {e}")
@@ -58,7 +58,7 @@ def convert_faces_to_embeddings(face_path: str):
     try:
         fe.extract_features(face_path)
         redis_client.set(face_path, 'completed_f')
-        print(f"✅ {face_path} processed and recorded.")
+        print(f"✅ Feature extraction successful: {face_path} is processed and recorded.")
     except Exception as e:
         print(f"❌ {face_path} unprocessed.")
         redis_client.set(face_path, f"in-complete_f: {e}")
