@@ -68,8 +68,8 @@ if __name__ == "__main__":
       
     except KeyboardInterrupt:
         print("\nStopping all services...")
-        run_process("pkill redis-server")
-        run_process("lsof -ti:6379 | xargs kill -9") #kill all redis processes
+        #run_process("pkill redis-server")
+        #run_process("lsof -ti:6379 | xargs kill -9") #kill all redis processes
         run_process("ps aux | grep celery | grep -v grep | awk '{print $2}' | xargs kill -9") 
         flask.terminate()
         flask.wait()
@@ -77,8 +77,8 @@ if __name__ == "__main__":
         sys.exit(0)
         
     except:
-        run_process("pkill redis-server")
-        run_process("lsof -ti:6379 | xargs kill -9") #kill all redis processes
+        #run_process("pkill redis-server")
+        #run_process("lsof -ti:6379 | xargs kill -9") #kill all redis processes
         run_process("ps aux | grep celery | grep -v grep | awk '{print $2}' | xargs kill -9") #kill all celery workers
         flask.terminate()
         flask.wait()
