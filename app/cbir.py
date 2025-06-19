@@ -218,13 +218,14 @@ class ImageProcessor:
         if uploaded_img_path.exists():
             # warnings.warn(f"Warning: Image '{file.filename}' already exists.", UserWarning)  # Log warning
             print(f"Image {file.filename} already exists.")
-            return img, uploaded_img_path
+            img_path_in_db = self.img_data / file.filename
+            return img, uploaded_img_path, img_path_in_db
         
         # Attempt to save the image
         try:
             img.save(uploaded_img_path)
-            shutil.copy(str(uploaded_img_path), self.img_data)
+            img_path_in_db = shutil.copy(str(uploaded_img_path), self.img_data)
         except Exception as e:
             raise Exception(f"Failed to save image: {e}")
 
-        return img, uploaded_img_path
+        return img, uploaded_img_path, img_path_in_db
