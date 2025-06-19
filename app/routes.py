@@ -9,6 +9,7 @@ from PIL import Image
 from pathlib import Path
 from scipy.spatial import distance
 from .tasks import fe
+from .functions import store_in_redis
 
 all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings()
 
@@ -18,10 +19,10 @@ def index():
     if request.method == "POST":
         img_stream = request.files.get("query-img")  # get query image
         # img_path = upload_directory  
-        _, img_path = fe.save_query_image(img_stream)
+        _, img_path, img_path_in_db = fe.save_query_image(img_stream)
         # Run search
         face_path = Path(fe.extract_faces(img_path))
-        print(img_path, face_path)
+        store_in_redis([img_path_in_db, face_path])
         query_feature = fe.extract_features(face_path).astype(float)
         # L2 distances to features
         # dists = np.linalg.norm(features-query, axis=1)
