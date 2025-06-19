@@ -1,7 +1,6 @@
 from .tasks import redis_client
 from threading import Thread
 from typing import Tuple
-from .tasks import redis_client
 import redis
 def _store_logic(paths: Tuple[str, str]):
     #first str is the img_path, the second upwards is the face_path
