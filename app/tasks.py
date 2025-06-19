@@ -31,10 +31,10 @@ def extract_faces(image_path: str):
         raise
 
 @celery_app.task (ignore_result=True)
-def extract_faces_batch(image_paths: List[str], redo=False):
+def extract_faces_batch(image_paths: List[str], reprocess=False):
     # Use Celery group to distribute tasks concurrently
     task_group = None
-    if not redo:
+    if not reprocess:
         # only add unprocessed task (imgs) to the task group 
         task_group = group(extract_faces.s(path) for path in image_paths if not redis_client.exists(path)) 
     else:
@@ -42,24 +42,24 @@ def extract_faces_batch(image_paths: List[str], redo=False):
     result = task_group.apply_async()
     #return result
 
-def extract_all_faces(redo=False):
+def extract_all_faces(reprocess=False):
     img_data = fe.img_data
     allowed_exts=("jpg", "png", "jpeg")
     # List image files
     img_data_list = [str(img) for img in img_data.iterdir() if str(img).lower().endswith(allowed_exts)]
-    extract_faces_batch.delay(img_data_list, redo)
+    extract_faces_batch.delay(img_data_list, reprocess)
     
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings(face_path: str):
     fe.extract_features(face_path)
 
 @celery_app.task(ignore_result=True)
-def convert_faces_to_embeddings_batch(faces_path: List[str], redo=False):
+def convert_faces_to_embeddings_batch(faces_path: List[str], reprocess=False):
     task_group = group(convert_faces_to_embeddings.s(path) for path in faces_path)
     result = task_group.apply_async()
 
-def convert_all_faces_to_embeddings(redo=False):
+def convert_all_faces_to_embeddings(reprocess=False):
     allowed_exts=("jpg", "png", "jpeg")
     faces_repo = fe.extracted_faces_path
     faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
-    convert_faces_to_embeddings_batch.delay(faces_repo_list, redo=False)  
+    convert_faces_to_embeddings_batch.delay(faces_repo_list, reprocess=False)  
