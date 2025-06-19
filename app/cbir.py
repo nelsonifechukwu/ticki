@@ -13,6 +13,7 @@ from PIL import Image
 import warnings
 import os
 import shutil
+import h5py
 
 database = Path("app/static/database")
 
@@ -178,17 +179,13 @@ class ImageProcessor:
         except Exception as e:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
     
-    def load_allfaces_embeddings(self, external=None): #load embedddings externally (h5py)
-        """
-        h5f = h5py.File(output, 'w')
-        h5f.create_dataset('dataset_1', data=features)
-        h5f.create_dataset('dataset_2', data=np.bytes_(names))
-        h5f.close ()
-        """
+    def load_allfaces_embeddings(self, external=None): 
         if external:
-            features = None
-            img_path = None
-            return features, img_path
+            with h5py.File(self.database /  "embeddings_info.hdf5", 'r') as file:
+                features = [feature for feature in file['embeddings']]
+                features = np.array(features, dtype=object).astype(float)
+                img_paths = [path.decode('utf-8') for path in file['img_paths']]
+            return features, img_paths
         
         features = []
         img_paths = []
@@ -201,7 +198,12 @@ class ImageProcessor:
             img_paths.append(self.img_data.relative_to(base_path) / (img_name + img_ext)) #get the reference img of the face
 
         features = np.array(features, dtype=object).astype(float)
-    
+        
+        with h5py.File(self.database /  "embeddings_info.hdf5", 'w') as file:
+            file.create_dataset('embeddings', data=features)
+            dt = h5py.string_dtype(encoding='utf-8')
+            file.create_dataset('img_paths', data=[str(p) for p in img_paths], dtype=dt)
+        
         return features, img_paths
     
     def save_query_image(self, file):
