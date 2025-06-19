@@ -180,6 +180,7 @@ class ImageProcessor:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
     
     def load_allfaces_embeddings(self, external=None): 
+        #load external embeddings
         if external:
             with h5py.File(self.database /  "embeddings_info.hdf5", 'r') as file:
                 features = [feature for feature in file['embeddings']]
