@@ -1,7 +1,5 @@
 from flask import Flask
 from config import Config
-from pathlib import Path
-import os
 
 def create_app(config_class=Config, repeat_tasks=False):
     app = Flask(__name__)
