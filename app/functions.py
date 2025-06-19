@@ -19,6 +19,8 @@ def _store_logic(paths: Tuple[str, str]):
                     new_upload = True  # track if image was newly added
         if new_upload:
             print(f"Uploaded {paths[0]} successfully stored in Redis")
+        else:
+            print(f"Uploaded {paths[0]} already exists in Redis")
 
     except redis.exceptions.ConnectionError:
         raise RuntimeError("❌ Unable to connect to Redis. Is the server running?")
