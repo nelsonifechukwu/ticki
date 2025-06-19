@@ -20,8 +20,9 @@ def index():
         # img_path = upload_directory  
         _, img_path = fe.save_query_image(img_stream)
         # Run search
-        face_dir = Path(fe.extract_faces(img_path))
-        query_feature = fe.extract_features(face_dir).astype(float)
+        face_path = Path(fe.extract_faces(img_path))
+        print(img_path, face_path)
+        query_feature = fe.extract_features(face_path).astype(float)
         # L2 distances to features
         # dists = np.linalg.norm(features-query, axis=1)
         dists = list(map(lambda x: 1 - distance.cosine(x, query_feature), all_face_embeddings)) 
