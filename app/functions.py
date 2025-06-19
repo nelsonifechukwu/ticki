@@ -10,11 +10,15 @@ def _store_logic(paths: Tuple[str, str]):
         redis_client.ping()
 
         # Set keys only if they don't exist
+        new_upload = False
         for i, path in enumerate(paths):
             path_str = str(path)
             if not redis_client.exists(path_str):
                 redis_client.set(path_str, 'completed' if i == 0 else 'completed_f')
-        print(f"uploaded {paths[0]} successfully stored in Redis")
+                if i == 0:
+                    new_upload = True  # track if image was newly added
+        if new_upload:
+            print(f"Uploaded {paths[0]} successfully stored in Redis")
 
     except redis.exceptions.ConnectionError:
         raise RuntimeError("❌ Unable to connect to Redis. Is the server running?")
