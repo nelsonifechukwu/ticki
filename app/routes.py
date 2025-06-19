@@ -15,24 +15,33 @@ all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    threshold = 0.67
     if request.method == "POST":
-        img_stream = request.files.get("query-img")  # get query image
-        # img_path = upload_directory  
-        _, img_path, img_path_in_db = fe.save_query_image(img_stream)
-        # Run search
-        face_path = Path(fe.extract_faces(img_path))
-        store_in_redis([img_path_in_db, face_path])
-        query_feature = fe.extract_features(face_path).astype(float)
-        # L2 distances to features
-        # dists = np.linalg.norm(features-query, axis=1)
-        dists = list(map(lambda x: 1 - distance.cosine(x, query_feature), all_face_embeddings)) 
-        ids = np.argsort([-x for x in dists]) #[:30]  # Top 30 results (minus for sorting in descending order)
-        file_info = [(dists[id], all_face_paths[id]) for id in ids if dists[id]>=threshold]
-        base_path = Path("app/static")
-        query_path = Path(img_path).relative_to(base_path)
-        return render_template("main.html", file_info=file_info) # query_path=query_path,
-    else:
-        return render_template("main.html")
+        return handle_post_request()
+    return render_template("main.html")
 
+def handle_post_request():
+    threshold = 0.67
+    img_stream = request.files.get("query-img")
+    _, img_path, img_path_in_db = fe.save_query_image(img_stream)
 
+    face_path = extract_and_store_faces(img_path, img_path_in_db)
+    query_feature = fe.extract_features(face_path).astype(float)
+    
+    results = get_similar_faces(query_feature, threshold)
+    return render_template("main.html", file_info=results)
+
+def extract_and_store_faces(img_path: Path, img_path_in_db: Path) -> Path:
+    face_path = Path(fe.extract_faces(img_path))
+    store_in_redis([img_path_in_db, face_path])
+    return face_path
+
+def get_similar_faces(query_feature: np.ndarray, threshold: float):
+    dists = [1 - distance.cosine(x, query_feature) for x in all_face_embeddings]
+    ids = np.argsort([-x for x in dists])  # descending order
+
+    base_path = Path("app/static")
+    return [
+        (dists[i], all_face_paths[i]) 
+        for i in ids 
+        if dists[i] >= threshold
+    ]
