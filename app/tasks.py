@@ -35,7 +35,7 @@ def extract_faces_batch(image_paths: List[str], reprocess=False):
     # Use Celery group to distribute tasks concurrently
     task_group = None
     if not reprocess:
-        # only add unprocessed task (imgs) to the task group 
+        # only add unprocessed task (imgs) to the task group.
         task_group = group(extract_faces.s(path) for path in image_paths if not redis_client.exists(path)) 
     else:
         task_group = group(extract_faces.s(path) for path in image_paths)
@@ -51,15 +51,30 @@ def extract_all_faces(reprocess=False):
     
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings(face_path: str):
-    fe.extract_features(face_path)
+    # Ensure idempotency: skip processing if this face_path was already handled (e.g., due to Celery task duplication)
+    if redis_client.exists(face_path):
+        print(f"Skipping {face_path}: Already processed.")
+        return
+    try:
+        fe.extract_features(face_path)
+        redis_client.set(face_path, 'completed_f')
+        print(f"✅ {face_path} processed and recorded.")
+    except Exception as e:
+        print(f"❌ {face_path} unprocessed.")
+        redis_client.set(face_path, f"in-complete_f: {e}")
+        raise
 
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings_batch(faces_path: List[str], reprocess=False):
-    task_group = group(convert_faces_to_embeddings.s(path) for path in faces_path)
+    if not reprocess:
+        # only add unprocessed task (faces) to the task group. 
+        task_group = group(extract_faces.s(path) for path in faces_path if not redis_client.exists(path))
+    else:
+        task_group = group(convert_faces_to_embeddings.s(path) for path in faces_path)
     result = task_group.apply_async()
 
 def convert_all_faces_to_embeddings(reprocess=False):
     allowed_exts=("jpg", "png", "jpeg")
     faces_repo = fe.extracted_faces_path
     faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
-    convert_faces_to_embeddings_batch.delay(faces_repo_list, reprocess=False)  
+    convert_faces_to_embeddings_batch.delay(faces_repo_list, reprocess)  
