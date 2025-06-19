@@ -39,7 +39,7 @@ if __name__ == "__main__":
         
         print("Face extraction Started...")
         from app.tasks import redis_client, extract_all_faces
-        reprocess = True
+        reprocess = False
         if reprocess:
             redis_client.flushdb()
         extract_all_faces(reprocess) 
