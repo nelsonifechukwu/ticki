@@ -4,15 +4,17 @@ from typing import Tuple
 from .tasks import redis_client
 import redis
 def _store_logic(paths: Tuple[str, str]):
-    #first str is the img_path, the second is the face_path
+    #first str is the img_path, the second upwards is the face_path
     try:
         # Check Redis connection
         redis_client.ping()
 
         # Set keys only if they don't exist
         for i, path in enumerate(paths):
-            if not redis_client.exists(path):
-                redis_client.set(str(path), 'completed_f' if i == 1 else 'completed')
+            path_str = str(path)
+            if not redis_client.exists(path_str):
+                redis_client.set(path_str, 'completed' if i == 0 else 'completed_f')
+        print(f"uploaded {paths[0]} successfully stored in Redis")
 
     except redis.exceptions.ConnectionError:
         raise RuntimeError("❌ Unable to connect to Redis. Is the server running?")
