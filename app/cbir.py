@@ -148,9 +148,11 @@ class ImageProcessor:
         except Exception as e:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
     
-    def _read_embeddings_store(self):
+    def _check_embedding_store(self):
         if not self.embeddings_store.exists():
             raise ValueError("No external embedding store available")
+    def _read_embeddings_store(self):
+        self._check_embedding_store()
         with h5py.File(self.embeddings_store, 'r') as file:
                 features = file['embeddings'][:]
                 img_paths = [path.decode('utf-8') for path in file['img_paths'][:]]
@@ -163,6 +165,7 @@ class ImageProcessor:
             file.create_dataset('img_paths', data=[str(p) for p in img_paths], dtype=dt)
     
     def append_to_embedding_store(self, query_feature, query_face_path):
+        self._check_embedding_store()
         with h5py.File(self.embeddings_store, 'r') as file:
             features = file['embeddings'][:]
             img_paths = [path.decode('utf-8') for path in file['img_paths'][:]]
