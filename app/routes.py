@@ -26,13 +26,13 @@ def handle_post_request():
     _, query_img_path = fe.save_query_image(img_stream)
 
     query_face_path = extract_faces(query_img_path)
-    query_feature = fe.extract_features(query_face_path).astype(float)
+    query_feature = fe.extract_features(query_face_path).astype(float) 
     
     store_in_redis([query_img_path, query_face_path])
     add_to_embedding_store(query_img_path, query_feature)
     
     results = get_similar_faces(query_feature, threshold)
-    return render_template("main.html", file_info=results)
+    return render_template("main.html", file_info=results) 
 
 def extract_faces(query_img_path: Path) -> Path:
     face_path = fe.extract_faces(query_img_path)

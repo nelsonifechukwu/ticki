@@ -71,7 +71,7 @@ class ImageProcessor:
         shutil.move(str(img_path), self.failed_extractions_path)
         self.logger_write(f"{reason} in {img_path.name}")
     
-    def extract_faces(self, img_path: str):
+    def extract_faces(self, img_path: str)->str:
         """Multiprocessing-safe face extraction using RetinaFace."""
         #check if img_path is a directory
         img_path = Path(img_path)
