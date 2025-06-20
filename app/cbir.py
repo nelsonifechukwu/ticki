@@ -195,20 +195,20 @@ class ImageProcessor:
 
 class EmbeddingsStore:
     def __init__(self, database):
-        self._db = database /  "embeddings_info.hdf5"
+        self._store = database /  "embeddings_info.hdf5"
     
-    def _check_db(self):
-        if not self._db.exists():
+    def _check_store(self):
+        if not self._store.exists():
             raise ValueError("No external embedding store available")
     def read(self):
-        self._check_db()
-        with h5py.File(self._db, 'r') as file:
+        self._check_store()
+        with h5py.File(self._store, 'r') as file:
                 features = file['embeddings'][:]
                 img_paths = [path.decode('utf-8') for path in file['img_paths'][:]]
         return features, img_paths
     
     def write(self, features: np.ndarray, img_paths: List[Path]):
-        with h5py.File(self._db, 'w') as file:
+        with h5py.File(self._store, 'w') as file:
             file.create_dataset('embeddings', data=features)
             dt = h5py.string_dtype(encoding='utf-8')
             file.create_dataset('img_paths', data=[str(p) for p in img_paths], dtype=dt)
