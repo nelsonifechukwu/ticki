@@ -14,6 +14,7 @@ import warnings
 import os
 import shutil
 import h5py
+from typing import List
 
 database = Path("app/static/database")
 
@@ -39,13 +40,14 @@ class ImageProcessor:
         self.extracted_faces_embeddings_path = self.img_repo / "extracted_faces_embeddings"
         self.failed_extractions_path = self.img_repo /  "failed_face_extractions_imgs"
         
-        all_paths = [self.database, self.img_repo, self.img_data, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path]
+        all_paths = [self.database, self.img_repo, self.img_data, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path,]
         
         self.initialize_paths(all_paths)
         
         #Logger for Initialization errors
         self.logger_path = self.failed_extractions_path / "log.txt"
-    
+        #embedding store
+        self.embeddings_store = self.database /  "embeddings_info.hdf5"
     def logger_write(self, msg:str):
         with open(self.logger_path, 'a') as f:
             f.write(msg + "\n")
@@ -62,7 +64,7 @@ class ImageProcessor:
         destination = self.failed_extractions_path / img_path.name
         # Delete existing file if it exists
         if destination.exists():
-            destination.unlink()
+            destination.unlink() 
             
     def _mark_as_failed(self, img_path: Path, reason: str) -> None:
         self._remove_existing_failed_img(img_path)
@@ -146,15 +148,46 @@ class ImageProcessor:
         except Exception as e:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
     
+    def _read_embeddings_store(self):
+        if not self.embeddings_store.exists():
+            raise ValueError("No external embedding store available")
+        with h5py.File(self.embeddings_store, 'r') as file:
+                features = file['embeddings'][:]
+                img_paths = [path.decode('utf-8') for path in file['img_paths'][:]]
+        return features, img_paths
+    
+    def _write_to_embeddings_store(self, features: np.ndarray, img_paths: List[Path]):
+        with h5py.File(self.embeddings_store, 'w') as file:
+            file.create_dataset('embeddings', data=features)
+            dt = h5py.string_dtype(encoding='utf-8')
+            file.create_dataset('img_paths', data=[str(p) for p in img_paths], dtype=dt)
+    
+    def append_to_embedding_store(self, query_feature, query_face_path):
+        with h5py.File(self.embeddings_store, 'r') as file:
+            features = file['embeddings'][:]
+            img_paths = [path.decode('utf-8') for path in file['img_paths'][:]]
+    
+        query_face_path_str = str(query_face_path)
+      # Skip if already in store
+        if query_face_path_str in img_paths:
+            print(f"{query_face_path_str} already exists in embedding store. Skipping append.")
+            return
+        features = np.vstack([features, query_feature])    
+        img_paths.append(query_face_path_str)
+        
+        with h5py.File(self.embeddings_store, 'w') as file:
+                file.create_dataset('embeddings', data=features)
+                dt = h5py.string_dtype(encoding='utf-8')
+                file.create_dataset('img_paths', data=img_paths, dtype=dt)
+    
     def load_allfaces_embeddings(self, external=None): 
         #load external embeddings
         if external:
-            with h5py.File(self.database /  "embeddings_info.hdf5", 'r') as file:
-                features = [feature for feature in file['embeddings']]
-                features = np.array(features, dtype=object).astype(float)
-                img_paths = [path.decode('utf-8') for path in file['img_paths']]
-            return features, img_paths
-        
+            try: 
+                return self._read_embeddings_store()
+            except ValueError as e:
+                raise
+  
         features = []
         img_paths = []
         base_path = Path("app/static")
@@ -166,12 +199,7 @@ class ImageProcessor:
             img_paths.append(self.img_data.relative_to(base_path) / (img_name + img_ext)) #get the reference img of the face
 
         features = np.array(features, dtype=object).astype(float)
-        
-        with h5py.File(self.database /  "embeddings_info.hdf5", 'w') as file:
-            file.create_dataset('embeddings', data=features)
-            dt = h5py.string_dtype(encoding='utf-8')
-            file.create_dataset('img_paths', data=[str(p) for p in img_paths], dtype=dt)
-        
+        self._write_to_embeddings_store(features, img_paths)
         return features, img_paths
     
     def save_query_image(self, file):
