@@ -231,4 +231,6 @@ class EmbeddingsStore:
                 file.create_dataset('embeddings', data=features)
                 dt = h5py.string_dtype(encoding='utf-8')
                 file.create_dataset('img_paths', data=img_paths, dtype=dt)
+        print(f"SUCCESS: {query_img_path_str} successfully added to embedding store.")
+        
     
