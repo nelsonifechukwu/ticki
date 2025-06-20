@@ -177,7 +177,6 @@ class ImageProcessor:
             return
         features = np.vstack([features, query_feature])    
         img_paths.append(query_img_path_str)
-        print(img_paths)
         
         with h5py.File(self.embeddings_store, 'w') as file:
                 file.create_dataset('embeddings', data=features)
