@@ -1,16 +1,12 @@
 from flask import request, render_template
 from app import app
 import sys
-
 sys.path.append("./")
-from datetime import datetime
 import numpy as np
-from PIL import Image
 from pathlib import Path
 from scipy.spatial import distance
 from .tasks import fe
 from .functions import store_in_redis
-import h5py
 
 try:  
     # all_face_embeddings, all_face_paths = None
