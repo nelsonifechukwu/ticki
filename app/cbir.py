@@ -14,7 +14,7 @@ import warnings
 import os
 import shutil
 import h5py
-from typing import List
+from typing import List, Tuple
 
 database = Path("app/static/database")
 
@@ -167,6 +167,7 @@ class ImageProcessor:
             img_name = feature_path.stem.split("_face")[0]  # 'IMG_3011'
             img_paths.append(self.img_data.relative_to(base_path) / (img_name + img_ext)) #get the reference img of the face
 
+        img_paths = [str(path) for path in img_paths]
         features = np.array(features, dtype=object).astype(float)
         self.embeddings_store.write(features, img_paths)
         return features, img_paths
@@ -200,18 +201,18 @@ class EmbeddingsStore:
     def _check_store(self):
         if not self._store.exists():
             raise ValueError("No external embedding store available")
-    def read(self):
+    def read(self) -> Tuple[np.ndarray, List[str]]:
         self._check_store()
         with h5py.File(self._store, 'r') as file:
                 features = file['embeddings'][:]
                 img_paths = [path.decode('utf-8') for path in file['img_paths'][:]]
         return features, img_paths
     
-    def write(self, features: np.ndarray, img_paths: List[Path]):
+    def write(self, features: np.ndarray, img_paths: List[str]):
         with h5py.File(self._store, 'w') as file:
             file.create_dataset('embeddings', data=features)
             dt = h5py.string_dtype(encoding='utf-8')
-            file.create_dataset('img_paths', data=[str(p) for p in img_paths], dtype=dt)
+            file.create_dataset('img_paths', data=img_paths, dtype=dt)
     
     def append(self, query_feature, query_img_path):
         features, img_paths = self.read()
