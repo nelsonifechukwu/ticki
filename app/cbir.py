@@ -164,19 +164,20 @@ class ImageProcessor:
             dt = h5py.string_dtype(encoding='utf-8')
             file.create_dataset('img_paths', data=[str(p) for p in img_paths], dtype=dt)
     
-    def append_to_embedding_store(self, query_feature, query_face_path):
+    def append_to_embedding_store(self, query_feature, query_img_path):
         self._check_embedding_store()
         with h5py.File(self.embeddings_store, 'r') as file:
             features = file['embeddings'][:]
             img_paths = [path.decode('utf-8') for path in file['img_paths'][:]]
     
-        query_face_path_str = str(query_face_path)
+        query_img_path_str = str(query_img_path)
       # Skip if already in store
-        if query_face_path_str in img_paths:
-            print(f"{query_face_path_str} already exists in embedding store. Skipping append.")
+        if query_img_path_str in img_paths:
+            print(f"{query_img_path_str} already exists in embedding store. Skipping append.")
             return
         features = np.vstack([features, query_feature])    
-        img_paths.append(query_face_path_str)
+        img_paths.append(query_img_path_str)
+        print(img_paths)
         
         with h5py.File(self.embeddings_store, 'w') as file:
                 file.create_dataset('embeddings', data=features)
