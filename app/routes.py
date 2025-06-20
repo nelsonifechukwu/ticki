@@ -31,8 +31,8 @@ def handle_post_request():
 
     query_face_path = extract_and_store_faces(uploaded_img_path)
     query_feature = fe.extract_features(query_face_path).astype(float)
-      
     add_to_embedding_store(uploaded_img_path, query_feature)
+    
     results = get_similar_faces(query_feature, threshold)
     return render_template("main.html", file_info=results)
 
@@ -56,6 +56,6 @@ def add_to_embedding_store(uploaded_img_path, query_feature):
     base_path = Path("app/static")
     uploaded_img_path = uploaded_img_path.relative_to(base_path)    
     try:
-        fe.append_to_embedding_store(query_feature, uploaded_img_path)
+        fe.embeddings_store.append(query_feature, uploaded_img_path)
     except ValueError as e:
         print(e) 
