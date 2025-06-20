@@ -13,7 +13,8 @@ from .functions import store_in_redis
 import h5py
 
 try:
-    all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings(external=True)
+    # all_face_embeddings, all_face_paths = None
+    all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings()
 except ValueError as e:
     print(e)
     
@@ -31,7 +32,7 @@ def handle_post_request():
     query_face_path = extract_and_store_faces(uploaded_img_path)
     query_feature = fe.extract_features(query_face_path).astype(float)
       
-    add_to_embedding_store(query_face_path, query_feature)
+    add_to_embedding_store(uploaded_img_path, query_feature)
     results = get_similar_faces(query_feature, threshold)
     return render_template("main.html", file_info=results)
 
@@ -51,7 +52,10 @@ def get_similar_faces(query_feature: np.ndarray, threshold: float):
         if dists[i] >= threshold
     ]
 
-def add_to_embedding_store(query_face_path, query_feature): 
+def add_to_embedding_store(uploaded_img_path, query_feature): 
     base_path = Path("app/static")
-    query_face_path = query_face_path.relative_to(base_path)    
-    fe.append_to_embedding_store(query_feature, query_face_path)
+    uploaded_img_path = uploaded_img_path.relative_to(base_path)    
+    try:
+        fe.append_to_embedding_store(query_feature, uploaded_img_path)
+    except ValueError as e:
+        print(e) 
