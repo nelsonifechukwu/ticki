@@ -23,19 +23,20 @@ def index():
 def handle_post_request():
     threshold = 0.67
     img_stream = request.files.get("query-img")
-    _, uploaded_img_path = fe.save_query_image(img_stream)
+    _, query_img_path = fe.save_query_image(img_stream)
 
-    query_face_path = extract_and_store_faces(uploaded_img_path)
+    query_face_path = extract_faces(query_img_path)
     query_feature = fe.extract_features(query_face_path).astype(float)
-    add_to_embedding_store(uploaded_img_path, query_feature)
+    
+    store_in_redis([query_img_path, query_face_path])
+    add_to_embedding_store(query_img_path, query_feature)
     
     results = get_similar_faces(query_feature, threshold)
     return render_template("main.html", file_info=results)
 
-def extract_and_store_faces(uploaded_img_path: Path) -> Path:
-    face_path = Path(fe.extract_faces(uploaded_img_path))
-    store_in_redis([uploaded_img_path, face_path])
-    return face_path
+def extract_faces(query_img_path: Path) -> Path:
+    face_path = fe.extract_faces(query_img_path)
+    return Path(face_path)
 
 def get_similar_faces(query_feature: np.ndarray, threshold: float):
     dists = [1 - distance.cosine(x, query_feature) for x in all_face_embeddings]
