@@ -149,7 +149,7 @@ class ImageProcessor:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
     
     
-    def load_allfaces_embeddings(self, external=None): 
+    def load_allfaces_embeddings(self, external=None) -> Tuple[np.ndarray, List[str]]: 
         #load external embeddings
         if external:
             try: 
@@ -172,7 +172,7 @@ class ImageProcessor:
         self.embeddings_store.write(features, img_paths)
         return features, img_paths
     
-    def save_query_image(self, file):
+    def save_query_image(self, file) -> Tuple[Image.Image, Path]:
         try:
             img = Image.open(file.stream)  # Load image using PIL
         except Exception as e:
