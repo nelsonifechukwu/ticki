@@ -214,11 +214,7 @@ class EmbeddingsStore:
             file.create_dataset('img_paths', data=[str(p) for p in img_paths], dtype=dt)
     
     def append(self, query_feature, query_img_path):
-        self._check_db()
-        with h5py.File(self._db, 'r') as file:
-            features = file['embeddings'][:]
-            img_paths = [path.decode('utf-8') for path in file['img_paths'][:]]
-    
+        features, img_paths = self.read()
         query_img_path_str = str(query_img_path)
       # Skip if already in store
         if query_img_path_str in img_paths:
@@ -226,11 +222,7 @@ class EmbeddingsStore:
             return
         features = np.vstack([features, query_feature])    
         img_paths.append(query_img_path_str)
-        
-        with h5py.File(self._db, 'w') as file:
-                file.create_dataset('embeddings', data=features)
-                dt = h5py.string_dtype(encoding='utf-8')
-                file.create_dataset('img_paths', data=img_paths, dtype=dt)
+        self.write(features, img_paths)
         print(f"SUCCESS: {query_img_path_str} successfully added to embedding store.")
         
     
