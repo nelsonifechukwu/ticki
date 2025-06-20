@@ -12,9 +12,9 @@ from .tasks import fe
 from .functions import store_in_redis
 import h5py
 
-try:
+try:  
     # all_face_embeddings, all_face_paths = None
-    all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings()
+    all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings(external=True)
 except ValueError as e:
     print(e)
     
