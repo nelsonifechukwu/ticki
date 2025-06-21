@@ -5,19 +5,23 @@ from pathlib import Path
 
 class EmbeddingsStore:
     def __init__(self, database):
-        self._store = database /  "embeddings_info.hdf5"
+        self.database = database
+        self._store = self.database /  "embeddings_info.hdf5"
+        # Paths initialized via ImageProcessor
+        self.img_data = self.database / "img_repo"  / "img_data"
+        self.extracted_faces_embeddings_path = self.database / "img_repo" / "extracted_faces_embeddings"   
     
     def _check_store(self):
         if not self._store.exists():
             raise ValueError("No external embedding store available")
-    def read(self) -> Tuple[np.ndarray, List[str]]:
+    def _read(self) -> Tuple[np.ndarray, List[str]]:
         self._check_store()
         with h5py.File(self._store, 'r') as file:
                 features = file['embeddings'][:]
                 img_paths = [path.decode('utf-8') for path in file['img_paths'][:]]
         return features, img_paths
     
-    def write(self, features: np.ndarray, img_paths: List[str]):
+    def _write(self, features: np.ndarray, img_paths: List[str]):
         with h5py.File(self._store, 'w') as file:
             file.create_dataset('embeddings', data=features)
             dt = h5py.string_dtype(encoding='utf-8')
@@ -39,7 +43,7 @@ class EmbeddingsStore:
         #load external embeddings
         if external:
             try: 
-                return self.read()
+                return self._read()
             except ValueError as e:
                 raise
   
@@ -55,9 +59,11 @@ class EmbeddingsStore:
 
         img_paths = [str(path) for path in img_paths]
         features = np.array(features, dtype=object).astype(float)
-        self.write(features, img_paths)
+        self._write(features, img_paths)
         return features, img_paths
-    
+
+database = Path("app/static/database")
+embeddings_store = EmbeddingsStore(database) 
 # try:   
 #     # all_face_embeddings, all_face_paths = None
 # all_face_embeddings, all_face_paths = embeddings_store.load_allfaces_embeddings(external=True)
