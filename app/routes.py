@@ -13,14 +13,15 @@ try:
     # all_face_embeddings, all_face_paths = None
     all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings(external=True)
 except ValueError as e:
+    all_face_embeddings = all_face_paths = None
     print(e)
-
+    
 api = Api(app)
 class HomeResource(Resource):
     def get(self):
         return render_template("main.html")
 
-    def post(self):
+    def post(self): 
         threshold = 0.67
         img_stream = request.files.get("query-img")
         _, query_img_path = fe.save_query_image(img_stream)
@@ -35,6 +36,8 @@ class HomeResource(Resource):
         return render_template("main.html", file_info=results)
 
     def _get_similar_faces(self, query_feature: np.ndarray, threshold: float):
+        if all_face_embeddings is None:
+            return None
         dists = [1 - distance.cosine(x, query_feature) for x in all_face_embeddings]
         ids = np.argsort([-x for x in dists])  # descending order
         return [
