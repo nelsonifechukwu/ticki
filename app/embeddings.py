@@ -29,7 +29,7 @@ class EmbeddingsStore:
             file.create_dataset('img_paths', data=img_paths, dtype=dt)
     
     def append(self, query_feature, query_img_path):
-        features, img_paths = self.read()
+        features, img_paths = self._read()
         query_img_path_str = str(query_img_path)
       # Skip if already in store
         if query_img_path_str in img_paths:
@@ -37,7 +37,7 @@ class EmbeddingsStore:
             return
         features = np.vstack([features, query_feature])    
         img_paths.append(query_img_path_str)
-        self.write(features, img_paths)
+        self._write(features, img_paths)
         print(f"SUCCESS: {query_img_path_str} successfully added to embedding store.")
     
     def load_allfaces_embeddings(self, external=None) -> Tuple[np.ndarray, List[str]]: 
