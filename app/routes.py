@@ -8,14 +8,8 @@ from pathlib import Path
 from scipy.spatial import distance
 from .tasks import fe
 from .functions import store_in_redis
+from .embeddings import embeddings_store
 
-try:   
-    # all_face_embeddings, all_face_paths = None
-    all_face_embeddings, all_face_paths = fe.load_allfaces_embeddings(external=True)
-except ValueError as e:
-    all_face_embeddings = all_face_paths = None
-    print(e)
-    
 api = Api(app)
 class HomeResource(Resource):
     def get(self):
@@ -36,7 +30,7 @@ class HomeResource(Resource):
         return render_template("main.html", file_info=results)
 
     def _get_similar_faces(self, query_feature: np.ndarray, threshold: float):
-        if all_face_embeddings is None:
+        if not all_face_embeddings:
             return None
         dists = [1 - distance.cosine(x, query_feature) for x in all_face_embeddings]
         ids = np.argsort([-x for x in dists])  # descending order
@@ -50,7 +44,7 @@ class HomeResource(Resource):
         base_path = Path("app/static")
         uploaded_img_path = uploaded_img_path.relative_to(base_path)
         try:
-            fe.embeddings_store.append(query_feature, uploaded_img_path)
+            embeddings_store.append(query_feature, uploaded_img_path)
         except ValueError as e:
             print(e)
 

@@ -3,7 +3,6 @@ from typing import Tuple, List
 import numpy as np
 from pathlib import Path
 
-
 class EmbeddingsStore:
     def __init__(self, database):
         self._store = database /  "embeddings_info.hdf5"
@@ -59,5 +58,11 @@ class EmbeddingsStore:
         self.write(features, img_paths)
         return features, img_paths
     
-        
+embeddings_store = EmbeddingsStore()
+# try:   
+#     # all_face_embeddings, all_face_paths = None
+all_face_embeddings, all_face_paths = embeddings_store.load_allfaces_embeddings(external=True)
+# except ValueError as e:
+#     all_face_embeddings = all_face_paths = None
+#     print(e)
     
