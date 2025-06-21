@@ -18,9 +18,6 @@ from retinaface import RetinaFace
 
 from .embeddings import EmbeddingsStore
 
-
-database = Path("app/static/database")
-
 #--------Tweakable GPU options-------#
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true' 
