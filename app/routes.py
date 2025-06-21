@@ -8,10 +8,10 @@ from pathlib import Path
 from scipy.spatial import distance
 from .tasks import fe
 from .functions import store_in_redis
-from .embeddings import EmbeddingsStore
+from .embeddings import embeddings_store
 
-embeddings_store = EmbeddingsStore()
 all_face_embeddings, all_face_paths = embeddings_store.load_allfaces_embeddings(external=True)
+
 api = Api(app)
 class HomeResource(Resource):
     def get(self):
