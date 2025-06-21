@@ -33,7 +33,6 @@ class ImageProcessor:
     
     def __init__(self, database:Path):
         #database contains img_repo, extracted_faces, extracted_face_embeddings, failed_extractions, log.txt
-        self.embeddings_store = EmbeddingsStore(database)
         self.database = database
         self.img_repo = self.database / "img_repo" 
         self.img_data = self.img_repo / "img_data"
@@ -43,7 +42,7 @@ class ImageProcessor:
         
         all_paths = [self.database, self.img_repo, self.img_data, self.extracted_faces_path, self.extracted_faces_embeddings_path, self.failed_extractions_path,]
         
-        self.initialize_paths(all_paths)
+        self._initialize_paths(all_paths)
         
         #Logger for Initialization errors
         self.logger_path = self.failed_extractions_path / "log.txt"
@@ -52,7 +51,7 @@ class ImageProcessor:
         with open(self.logger_path, 'a') as f:
             f.write(msg + "\n")
         
-    def initialize_paths(self, all_paths):
+    def _initialize_paths(self, all_paths):
         try:
             for path in all_paths:
                 path.mkdir(parents=True, exist_ok=True)
