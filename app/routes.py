@@ -1,4 +1,4 @@
-from flask import request, render_template
+from flask import request, render_template, make_response
 from flask_restful import Resource, Api
 from app import app
 import sys
@@ -10,12 +10,12 @@ from .tasks import fe
 from .functions import store_in_redis
 from .embeddings import embeddings_store
 
-all_face_embeddings, all_face_paths = embeddings_store.load_allfaces_embeddings(external=True)
+all_face_embeddings, all_face_paths = embeddings_store.load_allfaces_embeddings(external=False)
 
 api = Api(app)
 class HomeResource(Resource):
     def get(self):
-        return render_template("main.html")
+        return make_response(render_template("main.html"), 200)
 
     def post(self): 
         threshold = 0.67
@@ -29,11 +29,11 @@ class HomeResource(Resource):
         self._add_to_embedding_store(query_img_path, query_feature)
 
         results = self._get_similar_faces(query_feature, threshold)
-        return render_template("main.html", file_info=results)
+        return make_response(render_template("main.html", file_info=results), 200)
 
     def _get_similar_faces(self, query_feature: np.ndarray, threshold: float):
-        if not all_face_embeddings:
-            return None
+        # if not all_face_embeddings:
+        #     return None
         dists = [1 - distance.cosine(x, query_feature) for x in all_face_embeddings]
         ids = np.argsort([-x for x in dists])  # descending order
         return [
