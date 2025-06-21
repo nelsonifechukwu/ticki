@@ -2,6 +2,7 @@ import h5py
 from typing import Tuple, List
 import numpy as np
 from pathlib import Path
+from .tasks import database
 
 class EmbeddingsStore:
     def __init__(self, database):
@@ -62,7 +63,6 @@ class EmbeddingsStore:
         self._write(features, img_paths)
         return features, img_paths
 
-database = Path("app/static/database")
 embeddings_store = EmbeddingsStore(database) 
 # try:   
 #     # all_face_embeddings, all_face_paths = None
