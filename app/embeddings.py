@@ -1,5 +1,5 @@
 import h5py
-from typing import Tuple, List
+from typing import Tuple, List, Union
 import numpy as np
 from pathlib import Path
 from .tasks import database
@@ -28,7 +28,7 @@ class EmbeddingsStore:
             dt = h5py.string_dtype(encoding='utf-8')
             file.create_dataset('img_paths', data=img_paths, dtype=dt)
     
-    def append(self, query_feature, query_img_path):
+    def append(self, query_feature, query_img_path: Union[Path, str]):
         features, img_paths = self._read()
         query_img_path_str = str(query_img_path)
       # Skip if already in store
