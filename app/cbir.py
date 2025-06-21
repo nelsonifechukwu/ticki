@@ -2,7 +2,7 @@ from PIL import Image
 import warnings
 import os
 import shutil
-from typing import List, Tuple
+from typing import Tuple
 
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
@@ -15,8 +15,6 @@ from pathlib import Path
 from deepface import DeepFace
 from deepface.basemodels import VGGFace
 from retinaface import RetinaFace
-
-from .embeddings import EmbeddingsStore
 
 #--------Tweakable GPU options-------#
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
