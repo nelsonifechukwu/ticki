@@ -146,20 +146,30 @@ class ImageProcessor:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
 
     def save_query_image(self, file) -> Tuple[Image.Image, Path]:
+        import hashlib
+        from io import BytesIO
+
         try:
             img = Image.open(file.stream)  # Load image using PIL
         except Exception as e:
             raise Exception(f"Can't open file: {e}")
 
-        uploaded_img_path = self.img_data / file.filename
+        # Convert image to bytes for hashing
+        buffer = BytesIO()
+        img.save(buffer, format=img.format or "PNG")
+        img_bytes = buffer.getvalue()
+
+        # Create a SHA256 hash of the image content
+        file_hash = hashlib.sha256(img_bytes).hexdigest()
+        file_ext = Path(file.filename).suffix or ".png"
+        new_filename = f"{file_hash}{file_ext}"
+
+        uploaded_img_path = self.img_data / new_filename
 
         if uploaded_img_path.exists():
-            # warnings.warn(f"Warning: Image '{file.filename}' already exists.", UserWarning)  # Log warning
-            print(f"Image {file.filename} already exists.")
-            
+            print(f"Image {new_filename} already exists.")
             return img, uploaded_img_path
-        
-        # Attempt to save the image
+
         try:
             img.save(uploaded_img_path)
         except Exception as e:
