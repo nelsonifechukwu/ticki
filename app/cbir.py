@@ -16,6 +16,8 @@ from deepface import DeepFace
 from deepface.basemodels import VGGFace
 from retinaface import RetinaFace
 
+from werkzeug.datastructures import FileStorage
+
 #--------Tweakable GPU options-------#
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true' 
@@ -145,7 +147,7 @@ class ImageProcessor:
         except Exception as e:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
 
-    def save_query_image(self, file: ) -> Tuple[Image.Image, Path]:
+    def save_query_image(self, file: FileStorage) -> Tuple[Image.Image, Path]:
         import hashlib
         from io import BytesIO
 
