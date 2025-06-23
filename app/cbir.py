@@ -109,7 +109,7 @@ class ImageProcessor:
             raise
               # Re-raise exception for Celery task tracking
               
-    def extract_features(self, face_path: str):
+    def extract_features(self, face_path: str) -> np.ndarray:
 
         """
         Extract facial embeddings using DeepFace's FaceNet model.
@@ -145,27 +145,23 @@ class ImageProcessor:
         except Exception as e:
             raise Exception(f"Error generating embedding for {face_path}: {str(e)}")
 
-    def save_query_image(self, file) -> Tuple[Image.Image, Path]:
+    def save_query_image(self, file: ) -> Tuple[Image.Image, Path]:
         import hashlib
         from io import BytesIO
 
         try:
-            img = Image.open(file.stream)  # Load image using PIL
+            file_bytes = file.stream.read() # Load image using PIL
         except Exception as e:
             raise Exception(f"Can't open file: {e}")
 
-        # Convert image to bytes for hashing
-        buffer = BytesIO()
-        img.save(buffer, format=img.format or "PNG")
-        img_bytes = buffer.getvalue()
-
         # Create a SHA256 hash of the image content
-        file_hash = hashlib.sha256(img_bytes).hexdigest()
+        file_hash = hashlib.sha256(file_bytes).hexdigest()
         file_ext = Path(file.filename).suffix or ".png"
         new_filename = f"{file_hash}{file_ext}"
 
         uploaded_img_path = self.img_data / new_filename
 
+        img = Image.open(BytesIO(file_bytes))
         if uploaded_img_path.exists():
             print(f"Image {new_filename} already exists.")
             return img, uploaded_img_path
