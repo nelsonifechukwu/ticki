@@ -8,7 +8,7 @@ from pathlib import Path
 from scipy.spatial import distance
 from .tasks import fe
 from .functions import store_in_redis
-from .embeddings import embeddings_store
+from .embeddings import embeddings_store, store_in_background
 
 all_face_embeddings, all_face_paths = embeddings_store.load_allfaces_embeddings(external=False)
 
@@ -25,10 +25,10 @@ class HomeResource(Resource):
         query_face_path = Path(fe.extract_faces(query_img_path))
         query_feature = fe.extract_features(query_face_path).astype(float)
 
-        store_in_redis([query_img_path, query_face_path])
-        self._add_to_embedding_store(query_img_path, query_feature)
-
         results = self._get_similar_faces(query_feature, threshold)
+        ###################
+        store_in_background()
+        ###################
         return make_response(render_template("main.html", file_info=results), 200)
 
     def _get_similar_faces(self, query_feature: np.ndarray, threshold: float):
@@ -42,12 +42,6 @@ class HomeResource(Resource):
             if dists[i] >= threshold
         ]
 
-    def _add_to_embedding_store(self, uploaded_img_path, query_feature):
-        base_path = Path("app/static")
-        uploaded_img_path = uploaded_img_path.relative_to(base_path)
-        try:
-            embeddings_store.append(query_feature, uploaded_img_path)
-        except ValueError as e:
-            print(e)
+    
 
 api.add_resource(HomeResource, "/", endpoint="index") 

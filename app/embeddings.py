@@ -62,8 +62,28 @@ class EmbeddingsStore:
         features = np.array(features, dtype=object).astype(float)
         self._write(features, img_paths)
         return features, img_paths
+    
+    def _add_to_embedding_store(self, query_img_path, query_feature):
+        base_path = Path("app/static")
+        query_img_path = query_img_path.relative_to(base_path)
+        try:
+            self.append(query_feature, query_img_path)
+        except ValueError as e:
+            print(e)
+            
+    def process_uploads(self):
+        #check if there's any file in the upload folder 
+        
+        store_in_redis([query_img_path, query_face_path])
+        self._add_to_embedding_store(query_img_path, query_feature)
 
-embeddings_store = EmbeddingsStore(database) 
+    
+
+embeddings_store = EmbeddingsStore(database)
+
+def store_in_background():
+    embeddings_store.process_uploads()
+ 
 # try:   
 #     # all_face_embeddings, all_face_paths = None
 # all_face_embeddings, all_face_paths = embeddings_store.load_allfaces_embeddings(external=True)
