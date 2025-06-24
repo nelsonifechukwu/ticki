@@ -7,8 +7,8 @@ import numpy as np
 from pathlib import Path
 from scipy.spatial import distance
 from .tasks import fe
-from .functions import store_in_redis
-from .embeddings import embeddings_store, store_in_background
+
+from .embeddings import embeddings_store
 
 all_face_embeddings, all_face_paths = embeddings_store.load_allfaces_embeddings(external=False)
 
@@ -27,7 +27,7 @@ class HomeResource(Resource):
 
         results = self._get_similar_faces(query_feature, threshold)
         ###################
-        store_in_background()
+        embeddings_store.bg_store(query_feature, query_face_path, query_img_path)
         ###################
         return make_response(render_template("main.html", file_info=results), 200)
 
