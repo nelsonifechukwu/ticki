@@ -98,14 +98,10 @@ class ImageProcessor:
                     face_filename = f"{img_path.stem}_face_{i}{img_path.suffix}" #suffix adds the leading dot of the extension
                     face_filepath = self.extracted_faces_path / face_filename
                     img.save(face_filepath)
-                    faces_path.append(face_filepath)
+                    faces_path.append(str(face_filepath))
                 else:
                     print (f"Some faces in {img_path.name} couldn't be extracted")
-            return str(faces_path[len(faces_path)-1])
-
-            #this would come in handy during the extraction of multiple faces in 1 upload
-            #return str: celery requires a string (which is JSON serializable) not a PosixPath
-
+            return str(faces_path) #return all extracted faces path
         except Exception as e:
             print(f"Error processing {img_path.name}: {str(e)}")
             raise

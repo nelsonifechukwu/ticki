@@ -1,13 +1,15 @@
+from app import app
+import numpy as np
+from scipy.spatial import distance
 from flask import request, render_template, make_response
 from flask_restful import Resource, Api
-from app import app
+
 import sys
 sys.path.append("./")
-import numpy as np
 from pathlib import Path
-from scipy.spatial import distance
-from .tasks import fe
+import ast
 
+from .tasks import fe
 from .embeddings import embeddings_store
 
 all_face_embeddings, all_face_paths = embeddings_store.load_allfaces_embeddings(external=False)
@@ -22,7 +24,10 @@ class HomeResource(Resource):
         img_stream = request.files.get("query-img")
         _, query_img_path = fe.save_query_image(img_stream)
 
-        query_face_path = Path(fe.extract_faces(query_img_path))
+        query_face_paths_str = fe.extract_faces(query_img_path)
+        query_face_paths = ast.literal_eval(query_face_paths_str)
+        query_face_path = Path(query_face_paths[-1])
+
         query_feature = fe.extract_features(query_face_path).astype(float)
 
         results = self._get_similar_faces(query_feature, threshold)
