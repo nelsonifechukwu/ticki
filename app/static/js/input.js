@@ -1,7 +1,6 @@
 const imgInput = document.getElementById("input-img-preview");
 const imgInputLabel = document.getElementById("input-img-label");
 const imgContainer = document.querySelector(".input-img-container");
-let imgFiles = [];
 
 //----Implement search for multiple images later on----------
 
@@ -62,7 +61,7 @@ const customFormSubmitHandler = async (ev) => {
     console.log("Input is empty");
     return;
   }
-  
+
   _ImgInput.files = imgInput.files;
   form = ev.target; // don't submit form to server w/.submit()
 
