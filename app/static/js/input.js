@@ -25,6 +25,8 @@ let imgFiles = [];
 //     return;
 //   };
 const addImgHandler = () => {
+  //we use imgFiles to hold the actual img, since it cannot be 
+  //reconstructed from newImg.src
   const file = imgInput.files[0];
   if (!file) return;
 
@@ -52,7 +54,7 @@ const addImgHandler = () => {
 };
 
 //store the img file in an <input file element> kinda obj--FileList, (using DataTransfer) so that it can be submitted via the form
-const getImgFileList = (imgFiles) => {
+const getImgFileList = () => {
   const _imgFiles = new DataTransfer();
   _imgFiles.items.add(imgFiles[0]);
   return _imgFiles.files;
@@ -61,7 +63,7 @@ const getImgFileList = (imgFiles) => {
 const customFormSubmitHandler = async (ev) => {
   ev.preventDefault(); //prevent form submission
   const _ImgInput = document.getElementById("q-img");
-  _ImgInput.files = getImgFileList(imgFiles);
+  _ImgInput.files = getImgFileList();
   form = ev.target; // don't submit form to server w/.submit(), etc
 
   const formData = new FormData(form); // Prepare form data
