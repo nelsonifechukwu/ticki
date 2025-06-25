@@ -24,7 +24,7 @@ let imgFiles = [];
 //     imgInputHelper.value = "";
 //     return;
 //   };
-const addImgHandler = () => {
+const previewImgHandler = () => {
   //we use imgFiles to hold the actual img, since it cannot be
   //reconstructed from newImg.src
   const file = imgInput.files[0];
@@ -86,7 +86,7 @@ const customFormSubmitHandler = async (ev) => {
   }
 };
 
-imgInput.addEventListener("change", addImgHandler);
+imgInput.addEventListener("change", previewImgHandler);
 document
   .querySelector(".img-input-form")
   .addEventListener("submit", customFormSubmitHandler);
