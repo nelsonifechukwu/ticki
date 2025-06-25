@@ -57,6 +57,12 @@ const customFormSubmitHandler = async (ev) => {
   ev.preventDefault(); //prevent form submission
   const _ImgInput = document.getElementById("q-img");
 
+  //check if there's any input img
+  if (!imgInput.files || imgInput.files.length === 0) {
+    console.log("Input is empty");
+    return;
+  }
+  
   _ImgInput.files = imgInput.files;
   form = ev.target; // don't submit form to server w/.submit()
 
