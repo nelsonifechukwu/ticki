@@ -83,35 +83,36 @@ def convert_all_faces_to_embeddings(reprocess=False):
     faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
     convert_faces_to_embeddings_batch.delay(faces_repo_list, reprocess)  
 
-def _store_logic(paths: Tuple[str, str]):
-    #first str is the img_path, the second one is the face_path
+def _store_in_redis(img_path, faces_path):
     try:
         # Check Redis connection
-        redis_client.ping()
-
-        # Set keys only if they don't exist
         new_upload = False
-        for i, path in enumerate(paths):
-            path_str = str(path)
-            if not redis_client.exists(path_str):
-                redis_client.set(path_str, 'completed' if i == 0 else 'completed_f')
-                if i == 0:
-                    new_upload = True  # track if image was newly added
+        redis_client.ping()
+        img_name = Path(img_path).filename
+        if not redis_client.exists(img_name):
+            new_upload = True
+            redis_client.set(img_name, 'completed')
+        
+        for face_path in faces_path:
+            face_img_name = Path(face_path).filename
+            if not redis_client.exists(face_img_name):
+                redis_client.set(face_img_name, 'completed_f')
+                
         if new_upload:
-            print(f"Uploaded {paths[0]} successfully stored in Redis")
+            print(f"Uploaded {img_name} successfully stored in Redis")
         else:
-            print(f"Uploaded {paths[0]} already exists in Redis")
+            print(f"Uploaded {img_name} already exists in Redis")
 
     except redis.exceptions.ConnectionError:
         raise RuntimeError("❌ Unable to connect to Redis. Is the server running?")
     except Exception as e:
         raise RuntimeError(f"❌ Error while storing keys in Redis: {e}")
     
-def store_in_redis(paths):
+def store_in_redis(img_path: str, faces_path: List[str]):
     """
     Threaded Redis setter to avoid blocking main request thread.
     Assumes Redis server is already running.
     """
-    thread = Thread(target=_store_logic, args=(paths,))
+    thread = Thread(target=_store_in_redis, args=(img_path,faces_path,))
     #thread.daemon = True  # Dies with the main thread
     thread.start()
