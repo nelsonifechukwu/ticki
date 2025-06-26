@@ -26,7 +26,7 @@ def inject_base_path():
 def extract_faces(image_path: str):
     # Ensure idempotency: skip processing if this image_path was already handled (e.g., due to Celery task duplication)
     img_name = Path(image_path).name
-    if redis_client.exists(img_name):
+    if not redis_client.setnx(img_name, "in-progress"):
         print(f"Skipping {img_name}: Already processed.")
         return
     try:
@@ -61,7 +61,7 @@ def extract_all_faces(reprocess=False):
 def convert_faces_to_embeddings(face_path: str):
     # Ensure idempotency: skip processing if this face_path was already handled (e.g., due to Celery task duplication)
     face_img_name = Path(face_path).name
-    if redis_client.exists(face_img_name):
+    if not redis_client.setnx(face_img_name, "in-progress"):
         print(f"Skipping {face_img_name}: Already processed.")
         return
     try:
@@ -94,15 +94,12 @@ def _store_in_redis(img_path: Path, faces_path: List[str]):
         redis_client.ping()
         new_upload = False
         img_name = img_path.name
-        if not redis_client.exists(img_name):
-            new_upload = True
-            redis_client.set(img_name, 'completed') 
-        
+        # Set if not exists (atomic)
+        new_upload = redis_client.setnx(img_name, "completed")     
         for face_path in faces_path:
             face_img_name = Path(face_path).name
-            if not redis_client.exists(face_img_name):
-                redis_client.set(face_img_name, 'completed_f')
-                
+            redis_client.setnx(face_img_name, "completed")
+     
         if new_upload:
             print(f"Uploaded {img_name} successfully stored in Redis")
         else:
