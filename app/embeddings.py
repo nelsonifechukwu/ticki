@@ -27,7 +27,7 @@ class EmbeddingsStore:
             dt = h5py.string_dtype(encoding='utf-8')
             file.create_dataset('img_names', data=img_names, dtype=dt)
     
-    def append(self, query_feature, query_img_path: Union[Path, str]):
+    def _append(self, query_feature, query_img_path: Union[Path, str]):
         features, img_names = self._read()
         query_img_name = str(Path(query_img_path).name)
       # Skip if already in store
@@ -64,7 +64,7 @@ class EmbeddingsStore:
     
     def _add_to_embedding_store(self, query_feature: np.ndarray, query_img_path: Path):
         try:
-            self.append(query_feature, query_img_path)
+            self._append(query_feature, query_img_path)
         except ValueError as e:
             print(e)
             
