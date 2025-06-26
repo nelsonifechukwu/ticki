@@ -98,7 +98,7 @@ class ImageProcessor:
                     face_filename = f"{img_path.stem}_face_{i}{img_path.suffix}" #suffix adds the leading dot of the extension
                     face_filepath = self.extracted_faces_path / face_filename
                     img.save(face_filepath)
-                    faces_path.append(str(face_filepath))
+                    faces_path.append(str(face_filepath)) #str because ast can only process "List[str]" not "List[Path]"
                 else:
                     print (f"Some faces in {img_path.name} couldn't be extracted")
             return str(faces_path) #return all extracted faces path
