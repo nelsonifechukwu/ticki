@@ -18,26 +18,26 @@ class EmbeddingsStore:
         self._check_store()
         with h5py.File(self._store, 'r') as file:
                 features = file['embeddings'][:]
-                img_paths = [path.decode('utf-8') for path in file['img_paths'][:]]
-        return features, img_paths
+                img_names = [img_name.decode('utf-8') for img_name in file['img_names'][:]]
+        return features, img_names
     
-    def _write(self, features: np.ndarray, img_paths: List[str]):
+    def _write(self, features: np.ndarray, img_names: List[str]):
         with h5py.File(self._store, 'w') as file:
             file.create_dataset('embeddings', data=features)
             dt = h5py.string_dtype(encoding='utf-8')
-            file.create_dataset('img_paths', data=img_paths, dtype=dt)
+            file.create_dataset('img_names', data=img_names, dtype=dt)
     
     def append(self, query_feature, query_img_path: Union[Path, str]):
-        features, img_paths = self._read()
-        query_img_path_str = str(query_img_path)
+        features, img_names = self._read()
+        query_img_name = str(Path(query_img_path).name)
       # Skip if already in store
-        if query_img_path_str in img_paths:
-            print(f"{query_img_path_str} already exists in embedding store. Skipping append.")
+        if query_img_name in img_names:
+            print(f"{query_img_name} already exists in embedding store. Skipping append.")
             return
         features = np.vstack([features, query_feature])    
-        img_paths.append(query_img_path_str)
-        self._write(features, img_paths)
-        print(f"SUCCESS: {query_img_path_str} successfully added to embedding store.")
+        img_names.append(query_img_name)
+        self._write(features, img_names)
+        print(f"SUCCESS: {query_img_name} successfully added to embedding store.")
     
     def load_allfaces_embeddings(self, external=None) -> Tuple[np.ndarray, List[str]]: 
         #load external embeddings
@@ -48,33 +48,31 @@ class EmbeddingsStore:
                 raise
   
         features = []
-        img_paths = []
-        base_path = Path("app/static")
+        img_names = []
         for feature_path in self.extracted_faces_embeddings_path.glob("*.npy"):
             features.append(np.load(feature_path))
+            
+            # get the reference img of the face
             # From 'IMG_3011_face_0.JPG.npy' to
-            img_ext = Path(feature_path.stem).suffix  # '.JPG'
-            img_name = feature_path.stem.split("_face")[0]  # 'IMG_3011'
-            img_paths.append(self.img_data.relative_to(base_path) / (img_name + img_ext)) #get the reference img of the face
+            img_ext = Path(feature_path.stem).suffix  # '.JPG' to
+            img_name = feature_path.stem.split("_face")[0]  # 'IMG_3011' to
+            img_names.append(img_name + img_ext) # 'IMG_3011.JPG'
 
-        img_paths = [str(path) for path in img_paths]
         features = np.array(features, dtype=object).astype(float)
-        self._write(features, img_paths)
-        return features, img_paths
+        self._write(features, img_names)
+        return features, img_names
     
-    def _add_to_embedding_store(self, query_img_path, query_feature):
-        base_path = Path("app/static")
-        query_img_path = query_img_path.relative_to(base_path)
+    def _add_to_embedding_store(self, query_feature: np.ndarray, query_img_path: Path):
         try:
             self.append(query_feature, query_img_path)
         except ValueError as e:
             print(e)
             
-    def bg_store(self, query_feature: np.ndarray, query_img_path: str,query_face_paths: List[str] ):
+    def bg_store(self, query_feature: np.ndarray, query_img_path: Path, query_face_paths: List[str] ):
         from threading import Thread
         #check if there's any file in the upload folder 
         store_in_redis(query_img_path, query_face_paths)
-        thread = Thread(target = self._add_to_embedding_store, args=(query_img_path, query_feature,))
+        thread = Thread(target = self._add_to_embedding_store, args=(query_feature, query_img_path))
         #thread.daemon = True  # Dies with the main thread
         thread.start()
 
