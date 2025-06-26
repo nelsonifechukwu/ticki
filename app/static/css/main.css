@@ -89,6 +89,7 @@ body {
 
       .input-img-container {
         display: flex;
+        position: relative;
         flex-wrap: wrap;
         gap: 0.5rem;
         flex-direction: column;
@@ -118,6 +119,7 @@ body {
           opacity: 0;
           height: 0;
         }
+
       }
     }
 
@@ -163,6 +165,24 @@ body {
 .content .output-imgs {
   height: 800px;
   width: 800px;
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.is-required {
+  display: none;
+  position: absolute;
+  color: rgb(187, 227, 191);
+  font-weight: bold;
+  left: calc(((100% - var(--label-width)) / 2) + var(--label-width));
+  animation: fade-out 4s ease-out forwards;
 }
 
 @media screen and (min-width: 1000px) {
