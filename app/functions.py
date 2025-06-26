@@ -44,7 +44,7 @@ def extract_faces_batch(image_paths: List[str], reprocess=False):
     task_group = None
     if not reprocess:
         # only add unprocessed task (imgs) to the task group.
-        task_group = group(extract_faces.s(path) for path in image_paths if not redis_client.exists(path)) 
+        task_group = group(extract_faces.s(path) for path in image_paths if not redis_client.exists(Path(path).name)) 
     else:
         task_group = group(extract_faces.s(path) for path in image_paths)
     result = task_group.apply_async()
@@ -77,7 +77,7 @@ def convert_faces_to_embeddings(face_path: str):
 def convert_faces_to_embeddings_batch(faces_path: List[str], reprocess=False):
     if not reprocess:
         # only add unprocessed task (faces) to the task group. 
-        task_group = group(convert_faces_to_embeddings.s(path) for path in faces_path if not redis_client.exists(path))
+        task_group = group(convert_faces_to_embeddings.s(path) for path in faces_path if not redis_client.exists(Path(path).name))
     else:
         task_group = group(convert_faces_to_embeddings.s(path) for path in faces_path)
     result = task_group.apply_async()
