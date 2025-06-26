@@ -12,10 +12,10 @@ database = Path("app/static/database")
 fe = ImageProcessor(database)
 celery_app = Celery('functions', broker='redis://localhost:6379/0')
 redis_client = redis.Redis(host='localhost', port=6379, db=1)
-base_path = Path("app/static") 
 
 @app.context_processor
 def inject_base_path():
+    base_path = Path("app/static") 
     img_data_path = fe.img_data.relative_to(base_path)
     return {"img_data_path": str(img_data_path) + "/"} 
 #celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
