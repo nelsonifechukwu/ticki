@@ -95,7 +95,7 @@ def _store_in_redis(img_path: Path, faces_path: List[str]):
             redis_client.set(img_name, 'completed') 
         
         for face_path in faces_path:
-            face_img_name = face_path.name
+            face_img_name = Path(face_path).name
             if not redis_client.exists(face_img_name):
                 redis_client.set(face_img_name, 'completed_f')
                 
