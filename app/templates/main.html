@@ -34,9 +34,10 @@
             action="{{url_for('index')}}"
           >
             <div class="input-img-container">
+              <div class="is-required">*!</div>
               <label id="input-img-label" for="input-img-preview">+</label>
               <input type="file" id="input-img-preview" />
-              <input type="file" id="q-img" name="query-img"/>
+              <input type="file" id="q-img" name="query-img" />
             </div>
             <div>
               <input
@@ -55,7 +56,12 @@
             <img
               src="{{url_for('static', filename = info[1])}}"
               alt="IMG!"
-              style="max-width: 150px; max-height: 150px; height: auto; width: auto;"
+              style="
+                max-width: 150px;
+                max-height: 150px;
+                height: auto;
+                width: auto;
+              "
             />
             <figcaption>{{info[0]}}</figcaption>
           </div>

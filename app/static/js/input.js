@@ -58,6 +58,18 @@ const customFormSubmitHandler = async (ev) => {
 
   //check if there's any input img
   if (!imgInput.files || imgInput.files.length === 0) {
+    const required_content = document.querySelector(".is-required");
+    
+    // Remove animation class if already applied
+    required_content.classList.remove("is-required");
+
+    // Force reflow to reset animation
+    void required_content.offsetWidth;
+
+    // Re-add the animation class
+    required_content.classList.add("is-required");
+    required_content.style.display = "block";
+
     console.log("Input is empty");
     return;
   }
