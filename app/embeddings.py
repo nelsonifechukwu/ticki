@@ -70,10 +70,10 @@ class EmbeddingsStore:
         except ValueError as e:
             print(e)
             
-    def bg_store(self, query_feature, query_face_paths, query_img_path):
+    def bg_store(self, query_feature: np.ndarray, query_img_path: str,query_face_paths: List[str] ):
         from threading import Thread
         #check if there's any file in the upload folder 
-        store_in_redis([query_img_path, query_face_paths])
+        store_in_redis(query_img_path, query_face_paths)
         thread = Thread(target = self._add_to_embedding_store, args=(query_img_path, query_feature,))
         #thread.daemon = True  # Dies with the main thread
         thread.start()
