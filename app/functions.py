@@ -10,9 +10,9 @@ from app import app
 
 database = Path("app/static/database")
 fe = ImageProcessor(database)
-celery_app = Celery('tasks', broker='redis://localhost:6379/0')
+celery_app = Celery('functions', broker='redis://localhost:6379/0')
 redis_client = redis.Redis(host='localhost', port=6379, db=1)
-base_path = Path("app/static")
+base_path = Path("app/static") 
 
 @app.context_processor
 def inject_base_path():

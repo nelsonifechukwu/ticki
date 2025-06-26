@@ -6,7 +6,7 @@ def run_process(command):
     return subprocess.Popen(command, shell=True)
 
 def tasks_completed():
-    from app.functions import celery_app
+    from app.functions import celery_app 
     
     insp = celery_app.control.inspect()
     scheduled = insp.scheduled()
@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
         # Start Celery workers
         print("Starting Celery workers...")
-        celery = run_process("celery -A app.tasks worker --loglevel=info --concurrency=5 --pool threads")
+        celery = run_process("celery -A app.functions worker --loglevel=info --concurrency=5 --pool threads")
         time.sleep(2)
 
         # Start Flask server
