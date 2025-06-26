@@ -10,9 +10,9 @@ from pathlib import Path
 import ast
 
 from .tasks import fe
-from .embeddings import embeddings_store
+from .embeddings import embeddings_handler
 
-all_face_embeddings, all_face_names = embeddings_store.load_allfaces_embeddings(external=False)
+all_face_embeddings, all_face_names = embeddings_handler.load_allfaces_embeddings(external=False)
 
 api = Api(app)
 class HomeResource(Resource):
@@ -34,7 +34,7 @@ class HomeResource(Resource):
 
         results = self._get_similar_faces(query_feature, threshold)
         ###################
-        embeddings_store.bg_store(query_feature, query_img_path, query_face_paths)
+        embeddings_handler.mark_as_processed(query_feature, query_img_path, query_face_paths)
         ###################
         return make_response(render_template("main.html", file_info=results), 200)
 
