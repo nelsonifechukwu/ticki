@@ -18,16 +18,17 @@ redis_client = redis.Redis(host='localhost', port=6379, db=1)
 @celery_app.task (ignore_result=True)
 def extract_faces(image_path: str):
     # Ensure idempotency: skip processing if this image_path was already handled (e.g., due to Celery task duplication)
-    if redis_client.exists(image_path):
-        print(f"Skipping {image_path}: Already processed.")
+    img_name = Path(image_path).name
+    if redis_client.exists(img_name):
+        print(f"Skipping {img_name}: Already processed.")
         return
     try:
         fe.extract_faces(image_path)
-        redis_client.set(image_path, 'completed')
-        print(f"✅ Face extraction successful: {image_path} is processed and recorded.")
+        redis_client.set(img_name, 'completed')
+        print(f"✅ Face extraction successful: {img_name} is processed and recorded.")
     except Exception as e:
-        print(f"❌ {image_path} unprocessed.")
-        redis_client.set(image_path, f"in-complete: {e}")
+        print(f"❌ {img_name} unprocessed.")
+        redis_client.set(img_name, f"in-complete: {e}")
         raise
 
 @celery_app.task (ignore_result=True)
@@ -52,16 +53,17 @@ def extract_all_faces(reprocess=False):
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings(face_path: str):
     # Ensure idempotency: skip processing if this face_path was already handled (e.g., due to Celery task duplication)
-    if redis_client.exists(face_path):
-        print(f"Skipping {face_path}: Already processed.")
+    face_img_name = Path(face_path).name
+    if redis_client.exists(face_img_name):
+        print(f"Skipping {face_img_name}: Already processed.")
         return
     try:
         fe.extract_features(face_path)
-        redis_client.set(face_path, 'completed_f')
-        print(f"✅ Feature extraction successful: {face_path} is processed and recorded.")
+        redis_client.set(face_img_name, 'completed_f')
+        print(f"✅ Feature extraction successful: {face_img_name} is processed and recorded.")
     except Exception as e:
-        print(f"❌ {face_path} unprocessed.")
-        redis_client.set(face_path, f"in-complete_f: {e}")
+        print(f"❌ {face_img_name} unprocessed.")
+        redis_client.set(face_img_name, f"in-complete_f: {e}")
         raise
 
 @celery_app.task(ignore_result=True)
