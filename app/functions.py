@@ -6,6 +6,7 @@ from typing import List
 from pathlib import Path
 from threading import Thread
 from typing import Tuple
+from app import app
 
 
 database = Path("app/static/database")
@@ -14,6 +15,10 @@ celery_app = Celery('tasks', broker='redis://localhost:6379/0')
 redis_client = redis.Redis(host='localhost', port=6379, db=1)
 base_path = Path("app/static")
 
+@app.context_processor
+def inject_base_path():
+    img_data_path = fe.img_data.relative_to(base_path)
+    return {"img_data_path": str(img_data_path) + "/"} 
 #celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
 #celery_app.conf.worker_deduplicate_successful_tasks = True
 #celery_app.conf.task_acks_late=True
@@ -117,3 +122,4 @@ def store_in_redis(img_path: Path, faces_path: List[str]):
     thread = Thread(target=_store_in_redis, args=(img_path,faces_path,))
     #thread.daemon = True  # Dies with the main thread
     thread.start()
+    
