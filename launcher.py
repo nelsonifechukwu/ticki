@@ -6,7 +6,7 @@ def run_process(command):
     return subprocess.Popen(command, shell=True)
 
 def tasks_completed():
-    from app.tasks import celery_app
+    from app.functions import celery_app
     
     insp = celery_app.control.inspect()
     scheduled = insp.scheduled()
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         print("🚀 All services are up and running!")
         
         print("Face extraction Started...")
-        from app.tasks import redis_client, extract_all_faces
+        from app.functions import redis_client, extract_all_faces
         reprocess = False
         if reprocess:
             redis_client.flushdb()
@@ -49,7 +49,7 @@ if __name__ == "__main__":
             if tasks_completed(): #first round of tasks -> face extraction
                 print("✅ Face extraction completed.")
                 print("✅ Face -> Embeddings Started.")
-                from app.tasks import convert_all_faces_to_embeddings
+                from app.functions import convert_all_faces_to_embeddings
                 convert_all_faces_to_embeddings(reprocess)
                 print("Celery is converting face to embeddings...")
                 while True:

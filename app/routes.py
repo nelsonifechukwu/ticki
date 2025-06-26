@@ -9,7 +9,7 @@ sys.path.append("./")
 from pathlib import Path
 import ast
 
-from .tasks import fe
+from .functions import fe
 from .embeddings import embeddings_handler
 
 all_face_embeddings, all_face_names = embeddings_handler.load_allfaces_embeddings(external=False)
@@ -48,7 +48,5 @@ class HomeResource(Resource):
             for i in ids
             if dists[i] >= threshold
         ]
-
-    
 
 api.add_resource(HomeResource, "/", endpoint="index") 
