@@ -159,7 +159,7 @@ class ImageProcessor:
 
         uploaded_img_path = self.img_data / new_filename
 
-        img = Image.open(BytesIO(file_bytes))
+        img = Image.open(BytesIO(file_bytes)) 
         if uploaded_img_path.exists():
             print(f"Image {new_filename} already exists.")
             return img, uploaded_img_path

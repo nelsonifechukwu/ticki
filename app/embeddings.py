@@ -2,8 +2,7 @@ import h5py
 from typing import Tuple, List, Union
 import numpy as np
 from pathlib import Path
-from .tasks import database
-from .functions import store_in_redis
+from .tasks import database, store_in_redis
 class EmbeddingsStore:
     def __init__(self, database):
         self.database = database
@@ -71,10 +70,10 @@ class EmbeddingsStore:
         except ValueError as e:
             print(e)
             
-    def bg_store(self, query_feature, query_face_path, query_img_path):
+    def bg_store(self, query_feature, query_face_paths, query_img_path):
         from threading import Thread
         #check if there's any file in the upload folder 
-        store_in_redis([query_img_path, query_face_path])
+        store_in_redis([query_img_path, query_face_paths])
         thread = Thread(target = self._add_to_embedding_store, args=(query_img_path, query_feature,))
         #thread.daemon = True  # Dies with the main thread
         thread.start()
