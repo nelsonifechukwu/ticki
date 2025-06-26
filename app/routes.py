@@ -12,7 +12,7 @@ import ast
 from .tasks import fe
 from .embeddings import embeddings_store
 
-all_face_embeddings, all_face_paths = embeddings_store.load_allfaces_embeddings(external=False)
+all_face_embeddings, all_face_names = embeddings_store.load_allfaces_embeddings(external=False)
 
 api = Api(app)
 class HomeResource(Resource):
@@ -44,7 +44,7 @@ class HomeResource(Resource):
         dists = [1 - distance.cosine(x, query_feature) for x in all_face_embeddings]
         ids = np.argsort([-x for x in dists])  # descending order
         return [
-            (dists[i], all_face_paths[i])
+            (dists[i], all_face_names[i])
             for i in ids
             if dists[i] >= threshold
         ]
