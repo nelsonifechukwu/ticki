@@ -51,11 +51,10 @@
           </form>
         </div>
         <div class="selected-imgs">
-          {% set base_path = 'database/img_repo/img_data/' %}
           {% for info in file_info %}
           <div>
             <img
-              src="{{url_for('static', filename = base_path ~ info[1])}}"
+              src="{{url_for('static', filename = img_data_path ~ info[1])}}"
               alt="IMG!"
               style="
                 max-width: 150px;
