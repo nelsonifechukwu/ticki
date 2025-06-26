@@ -28,6 +28,7 @@ class HomeResource(Resource):
         query_face_paths = ast.literal_eval(query_face_paths_str)
         
         #this will be used in case of multiple faces during an upload. Select only one img for now
+        #store also the embeddings of the multiple faces marked as processed
         query_face_path = Path(query_face_paths[-1])
 
         query_feature = fe.extract_features(query_face_path).astype(float)
