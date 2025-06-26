@@ -5,7 +5,6 @@ from .cbir import ImageProcessor
 from typing import List
 from pathlib import Path
 from threading import Thread
-from typing import Tuple
 from app import app
 
 
