@@ -34,7 +34,7 @@ class HomeResource(Resource):
 
         results = self._get_similar_faces(query_feature, threshold)
         ###################
-        embeddings_store.bg_store(query_feature, query_face_path, query_img_path)
+        embeddings_store.bg_store(query_feature, query_face_paths, query_img_path)
         ###################
         return make_response(render_template("main.html", file_info=results), 200)
 
