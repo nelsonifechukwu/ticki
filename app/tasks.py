@@ -12,6 +12,7 @@ database = Path("app/static/database")
 fe = ImageProcessor(database)
 celery_app = Celery('tasks', broker='redis://localhost:6379/0')
 redis_client = redis.Redis(host='localhost', port=6379, db=1)
+base_path = Path("app/static")
 
 #celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
 #celery_app.conf.worker_deduplicate_successful_tasks = True
@@ -83,18 +84,18 @@ def convert_all_faces_to_embeddings(reprocess=False):
     faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
     convert_faces_to_embeddings_batch.delay(faces_repo_list, reprocess)  
 
-def _store_in_redis(img_path, faces_path):
+def _store_in_redis(img_path: Path, faces_path: List[str]):
     try:
         # Check Redis connection
-        new_upload = False
         redis_client.ping()
-        img_name = Path(img_path).filename
+        new_upload = False
+        img_name = img_path.name
         if not redis_client.exists(img_name):
             new_upload = True
-            redis_client.set(img_name, 'completed')
+            redis_client.set(img_name, 'completed') 
         
         for face_path in faces_path:
-            face_img_name = Path(face_path).filename
+            face_img_name = face_path.name
             if not redis_client.exists(face_img_name):
                 redis_client.set(face_img_name, 'completed_f')
                 
@@ -108,7 +109,7 @@ def _store_in_redis(img_path, faces_path):
     except Exception as e:
         raise RuntimeError(f"❌ Error while storing keys in Redis: {e}")
     
-def store_in_redis(img_path: str, faces_path: List[str]):
+def store_in_redis(img_path: Path, faces_path: List[str]):
     """
     Threaded Redis setter to avoid blocking main request thread.
     Assumes Redis server is already running.
