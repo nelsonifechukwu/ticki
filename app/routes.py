@@ -9,12 +9,12 @@ sys.path.append("./")
 from pathlib import Path
 import ast
 
-from .functions import fe 
+from .tasks import fe 
 from .embeddings import embeddings_handler
 
 all_face_embeddings, all_face_names = embeddings_handler.load_allfaces_embeddings(external=False)
 
-@app.context_processor
+@app.context_processor 
 def inject_base_path():
     base_path = Path("app/static") 
     img_data_path = fe.img_data.relative_to(base_path)
@@ -28,7 +28,8 @@ class HomeResource(Resource):
         threshold = 0.67
         img_stream = request.files.get("query-img")
         _, query_img_path = fe.save_query_image(img_stream)
-
+        query_img_path_str = str(query_img_path)
+        
         query_face_paths_str = fe.extract_faces(query_img_path)
         query_face_paths = ast.literal_eval(query_face_paths_str)
         
@@ -40,7 +41,7 @@ class HomeResource(Resource):
 
         results = self._get_similar_faces(query_feature, threshold)
         ###################
-        embeddings_handler.mark_as_processed(query_feature, query_img_path, query_face_paths)
+        embeddings_handler.mark_as_processed(query_feature, query_img_path_str, query_face_paths)
         ###################
         return make_response(render_template("main.html", file_info=results), 200)
 
@@ -54,6 +55,6 @@ class HomeResource(Resource):
             for i in ids
             if dists[i] >= threshold
         ]
-
+    
 api = Api(app)
 api.add_resource(HomeResource, "/", endpoint="index") 
