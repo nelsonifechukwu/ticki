@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
         # Start Celery workers
         print("Starting Celery workers...")
-        celery = run_process("celery -A app.functions.celery_app worker --loglevel=info --concurrency=5 --pool threads")
+        celery = run_process("celery -A app.functions worker --loglevel=info --concurrency=5 --pool threads") 
         time.sleep(2)
 
         # Start Flask server
