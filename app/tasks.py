@@ -1,21 +1,20 @@
-# app/tasks.py
 from celery import Celery, group
 import redis
 from .cbir import ImageProcessor
 from typing import List
 from pathlib import Path
-from threading import Thread
+from threading import Thread 
 
 database = Path("app/static/database")
 fe = ImageProcessor(database)
 celery_app = Celery('tasks', broker='redis://localhost:6379/0')
-redis_client = redis.Redis(host='localhost', port=6379, db=1)
+redis_client = redis.Redis(host='localhost', port=6379, db=1) 
 
 #celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
 #celery_app.conf.worker_deduplicate_successful_tasks = True
 #celery_app.conf.task_acks_late=True
 
-@celery_app.task (ignore_result=True)
+@celery_app.task (ignore_result=True) 
 def extract_faces(image_path: str):
     # Ensure idempotency: skip processing if this image_path was already handled (e.g., due to Celery task duplication)
     img_name = Path(image_path).name
@@ -81,34 +80,25 @@ def convert_all_faces_to_embeddings(reprocess=False):
     faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
     convert_faces_to_embeddings_batch.delay(faces_repo_list, reprocess)  
 
-def _store_in_redis(img_path: Path, faces_path: List[str]):
+@celery_app.task(ignore_result=True)
+def _store_in_redis(img_path: str, faces_path: List[str]):
     try:
-        # Check Redis connection
         redis_client.ping()
         new_upload = False
-        img_name = img_path.name
-        # Set if not exists (atomic)
+        img_name = Path(img_path).name
         new_upload = redis_client.setnx(img_name, "completed")     
         for face_path in faces_path:
             face_img_name = Path(face_path).name
             redis_client.setnx(face_img_name, "completed")
-            
+        
         if new_upload:
             print(f"Uploaded {img_name} successfully stored in Redis")
         else:
             print(f"Uploaded {img_name} already exists in Redis")
-
     except redis.exceptions.ConnectionError:
         raise RuntimeError("❌ Unable to connect to Redis. Is the server running?")
     except Exception as e:
         raise RuntimeError(f"❌ Error while storing keys in Redis: {e}")
     
-def store_in_redis(img_path: Path, faces_path: List[str]):
-    """
-    Threaded Redis setter to avoid blocking main request thread.
-    Assumes Redis server is already running.
-    """
-    thread = Thread(target=_store_in_redis, args=(img_path,faces_path,))
-    #thread.daemon = True  # Dies with the main thread
-    thread.start()
-    
+def store_in_redis(img_path: str, faces_path: List[str]):
+    _store_in_redis.delay(img_path, faces_path)
