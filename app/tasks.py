@@ -24,9 +24,9 @@ def extract_faces(image_path: str):
     try:
         fe.extract_faces(image_path)
         redis_client.set(img_name, 'completed')
-        print(f"✅ Face extraction successful: {img_name} is processed and recorded.")
+        print(f"✅ Faces extraced from {img_name}.")
     except Exception as e:
-        print(f"❌ {img_name} unprocessed.")
+        print(f"❌ Face extraction from {img_name} failed.")
         redis_client.set(img_name, f"in-complete: {e}")
         raise
 
@@ -92,13 +92,13 @@ def _store_in_redis(img_path: str, faces_path: List[str]):
             redis_client.setnx(face_img_name, "completed")
         
         if new_upload:
-            print(f"Uploaded {img_name} successfully stored in Redis")
+            print(f"✅ {img_name} stored in Redis")
         else:
-            print(f"Uploaded {img_name} already exists in Redis")
+            print(f"ℹ️ {img_name} already in Redis")
     except redis.exceptions.ConnectionError:
         raise RuntimeError("❌ Unable to connect to Redis. Is the server running?")
     except Exception as e:
-        raise RuntimeError(f"❌ Error while storing keys in Redis: {e}")
+        raise RuntimeError(f"❌ Error while storing keys in Redis: {e}") 
     
 def store_in_redis(img_path: str, faces_path: List[str]):
     _store_in_redis.delay(img_path, faces_path)
