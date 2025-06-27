@@ -17,13 +17,11 @@ class EmbeddingsStore:
         if not self._store.exists():
             raise ValueError("No external embedding store available")
     def _read(self) -> Tuple[np.ndarray, List[str]]:
-        with self._lock:
-            print("inside inside read lock")
-            self._check_store()
-            with h5py.File(self._store, 'r') as file:
-                    features = file['embeddings'][:]
-                    img_names = [img_name.decode('utf-8') for img_name in file['img_names'][:]]
-            return features, img_names
+        self._check_store()
+        with h5py.File(self._store, 'r') as file:
+                features = file['embeddings'][:]
+                img_names = [img_name.decode('utf-8') for img_name in file['img_names'][:]]
+        return features, img_names
     
     def _write(self, features: np.ndarray, img_names: List[str]):
         with self._lock:
@@ -33,18 +31,16 @@ class EmbeddingsStore:
                 file.create_dataset('img_names', data=img_names, dtype=dt)
     
     def _append(self, query_feature, query_img_path: str):
-        with self._lock:
-            print("inside lock")
-            features, img_names = self._read()
-            query_img_name = str(Path(query_img_path).name)
-        # Skip if already in store
-            if query_img_name in img_names:
-                print(f"{query_img_name} already exists in embedding store. Skipping append.")
-                return
-            features = np.vstack([features, query_feature])    
-            img_names.append(query_img_name)
-            self._write(features, img_names)
-            print(f"SUCCESS: {query_img_name} successfully added to embedding store.")
+        features, img_names = self._read()
+        query_img_name = str(Path(query_img_path).name)
+    # Skip if already in store
+        if query_img_name in img_names:
+            print(f"{query_img_name} already exists in embedding store. Skipping append.")
+            return
+        features = np.vstack([features, query_feature])    
+        img_names.append(query_img_name)
+        self._write(features, img_names)
+        print(f"SUCCESS: {query_img_name} successfully added to embedding store.")
     
     def load_allfaces_embeddings(self, external=None) -> Tuple[np.ndarray, List[str]]: 
         #load external embeddings
@@ -71,20 +67,17 @@ class EmbeddingsStore:
     
     def _add_to_embedding_store(self, query_feature: np.ndarray, query_img_path: str):
         try:
-            print("inside embedding")
             self._append(query_feature, query_img_path)
         except ValueError as e:
             print(e)
             
     def mark_as_processed(self, query_feature: np.ndarray, query_img_path: str, query_face_paths: List[str] ):
         store_in_redis(query_img_path, query_face_paths)
-        
-        print("embedding start")
+
         #store in embedding_store
         from threading import Thread
         thread = Thread(target = self._add_to_embedding_store, args=(query_feature, query_img_path))   
         thread.start() 
-        print("embedding end")
 
 embeddings_handler = EmbeddingsStore(database)
 
