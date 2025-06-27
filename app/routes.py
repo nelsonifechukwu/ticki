@@ -9,12 +9,17 @@ sys.path.append("./")
 from pathlib import Path
 import ast
 
-from .functions import fe
+from .functions import fe 
 from .embeddings import embeddings_handler
 
 all_face_embeddings, all_face_names = embeddings_handler.load_allfaces_embeddings(external=False)
 
-api = Api(app)
+@app.context_processor
+def inject_base_path():
+    base_path = Path("app/static") 
+    img_data_path = fe.img_data.relative_to(base_path)
+    return {"img_data_path": str(img_data_path) + "/"} 
+
 class HomeResource(Resource):
     def get(self):
         return make_response(render_template("main.html"), 200)
@@ -50,4 +55,5 @@ class HomeResource(Resource):
             if dists[i] >= threshold
         ]
 
+api = Api(app)
 api.add_resource(HomeResource, "/", endpoint="index") 
