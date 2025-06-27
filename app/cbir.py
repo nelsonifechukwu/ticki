@@ -26,7 +26,14 @@ logger = logging.getLogger(__name__)
 import coloredlogs
 coloredlogs.install(level='INFO', logger=logger)
 
+#--------Tweakable GPU options-------#
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+# os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true' 
+# export MPS_ENABLE_GROWTH=1 MPS_GRAPH_COMPILE_TIMEOUT=30 MPS_MEMORY_LIMIT=4096
+# pkill redis-server && export CUDA_VISIBLE_DEVICES=-1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+# disable mps backend which doesn't allow certain tensor ops
 os.environ["TF_MPS_ENABLED"] = "0"
+# tf.config.set_visible_devices([], 'GPU')
 class ImageProcessor:
     base_model = VGG16(weights='imagenet')
     model = Model(inputs=base_model.input, outputs=base_model.get_layer('fc1').output)
@@ -80,6 +87,7 @@ class ImageProcessor:
                 raise Exception("No faces detected in image")
 
             if len(faces) == 1 and any(x == 0 for x in faces[0].shape):
+                #if faces array contains 0 row/column/channel, terminate since it's a wrong representation of an img
                 self._mark_as_failed(img_path, "Face extraction failed")
                 raise Exception("Face extraction failed - couldn't extract detected faces")
 
