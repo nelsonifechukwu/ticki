@@ -3,16 +3,20 @@ import redis
 from .cbir import ImageProcessor, logger
 from typing import List
 from pathlib import Path
-from threading import Thread 
 
 database = Path("app/static/database")
 fe = ImageProcessor(database)
 celery_app = Celery('tasks', broker='redis://localhost:6379/0')
 redis_client = redis.Redis(host='localhost', port=6379, db=1) 
 
+	
+#celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
+#celery_app.conf.worker_deduplicate_successful_tasks = True
+#celery_app.conf.task_acks_late=True
 
 @celery_app.task(ignore_result=True) 
 def extract_faces(image_path: str):
+    # Ensure idempotency: skip processing if this image_path was already handled (e.g., due to Celery task duplication)
     img_name = Path(image_path).name
     if not redis_client.setnx(img_name, "in-progress"):
         logger.info(f"Skipping {img_name}: Already processed.")
@@ -43,6 +47,7 @@ def extract_all_faces(reprocess=False):
 
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings(face_path: str):
+    # Ensure idempotency: skip processing if this image_path was already handled (e.g., due to Celery task duplication)
     face_img_name = Path(face_path).name
     if not redis_client.setnx(face_img_name, "in-progress"):
         logger.info(f"Skipping {face_img_name}: Already processed.")
