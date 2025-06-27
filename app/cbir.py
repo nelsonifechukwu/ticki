@@ -8,9 +8,7 @@ from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
 from tensorflow.keras.models import Model
 import numpy as np
-from glob import glob
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
+
 from pathlib import Path
 from deepface import DeepFace
 from deepface.basemodels import VGGFace

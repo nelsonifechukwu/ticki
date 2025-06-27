@@ -7,4 +7,5 @@ def create_app(config_class=Config, reprocess=False):
     return app
 
 app = create_app()
-from app import routes
+from app import routes 
+

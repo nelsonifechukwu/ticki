@@ -6,7 +6,7 @@ def run_process(command):
     return subprocess.Popen(command, shell=True)
 
 def tasks_completed():
-    from app.functions import celery_app 
+    from app.tasks import celery_app 
     
     insp = celery_app.control.inspect()
     scheduled = insp.scheduled()
@@ -28,17 +28,17 @@ if __name__ == "__main__":
 
         # Start Celery workers
         print("Starting Celery workers...")
-        celery = run_process("celery -A app.functions worker --loglevel=info --concurrency=5 --pool threads") 
+        celery = run_process("celery -A app.tasks worker --loglevel=info --concurrency=5 --pool threads") 
         time.sleep(2)
 
         # Start Flask server
-        print("Starting Flask application...")
+        print("Starting Flask application...") 
         flask = run_process("flask run")
 
         print("🚀 All services are up and running!")
         
         print("Face extraction Started...")
-        from app.functions import redis_client, extract_all_faces
+        from app.tasks import redis_client, extract_all_faces
         reprocess = False
         if reprocess:
             redis_client.flushdb()
@@ -49,7 +49,7 @@ if __name__ == "__main__":
             if tasks_completed(): #first round of tasks -> face extraction
                 print("✅ Face extraction completed.")
                 print("✅ Face -> Embeddings Started.")
-                from app.functions import convert_all_faces_to_embeddings
+                from app.tasks import convert_all_faces_to_embeddings
                 convert_all_faces_to_embeddings(reprocess)
                 print("Celery is converting face to embeddings...")
                 while True:
@@ -59,10 +59,10 @@ if __name__ == "__main__":
                 break
             time.sleep(2)  # Wait before checking again
 
-        print("Stopping Celery workers...")
-        celery.terminate()
-        celery.wait()
-        print("Celery workers shut down. Flask is still running... Press CTRL+C to exit.")
+        # print("Stopping Celery workers...")
+        # celery.terminate()
+        # celery.wait()
+        print("Celery & Flask are still running... Press CTRL+C to exit.")
         # Keep Flask running
         flask.wait()
       
