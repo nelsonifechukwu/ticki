@@ -3,7 +3,7 @@ import h5py
 from typing import Tuple, List, Union
 import numpy as np
 from pathlib import Path
-from .functions import database, store_in_redis
+from .tasks import database, store_in_redis
 class EmbeddingsStore:
     def __init__(self, database):
         self.database = database
@@ -18,6 +18,7 @@ class EmbeddingsStore:
             raise ValueError("No external embedding store available")
     def _read(self) -> Tuple[np.ndarray, List[str]]:
         with self._lock:
+            print("inside inside read lock")
             self._check_store()
             with h5py.File(self._store, 'r') as file:
                     features = file['embeddings'][:]
@@ -31,8 +32,9 @@ class EmbeddingsStore:
                 dt = h5py.string_dtype(encoding='utf-8')
                 file.create_dataset('img_names', data=img_names, dtype=dt)
     
-    def _append(self, query_feature, query_img_path: Union[Path, str]):
+    def _append(self, query_feature, query_img_path: str):
         with self._lock:
+            print("inside lock")
             features, img_names = self._read()
             query_img_name = str(Path(query_img_path).name)
         # Skip if already in store
@@ -51,36 +53,38 @@ class EmbeddingsStore:
                 return self._read()
             except ValueError as e:
                 raise
-        with self._lock:
-            features = []
-            img_names = []
-            for feature_path in self.extracted_faces_embeddings_path.glob("*.npy"):
-                features.append(np.load(feature_path))
-                
-                # get the reference img of the face
-                # From 'IMG_3011_face_0.JPG.npy' to
-                img_ext = Path(feature_path.stem).suffix  # '.JPG' to
-                img_name = feature_path.stem.split("_face")[0]  # 'IMG_3011' to
-                img_names.append(img_name + img_ext) # 'IMG_3011.JPG'
+        #with self._lock:
+        features = []
+        img_names = []
+        for feature_path in self.extracted_faces_embeddings_path.glob("*.npy"):
+            features.append(np.load(feature_path))
+            
+            # get the reference img of the face
+            # From 'IMG_3011_face_0.JPG.npy' to
+            img_ext = Path(feature_path.stem).suffix  # '.JPG' to
+            img_name = feature_path.stem.split("_face")[0]  # 'IMG_3011' to
+            img_names.append(img_name + img_ext) # 'IMG_3011.JPG'
 
-            features = np.array(features, dtype=object).astype(float)
-            self._write(features, img_names)
-            return features, img_names
+        features = np.array(features, dtype=object).astype(float)
+        self._write(features, img_names)
+        return features, img_names
     
-    def _add_to_embedding_store(self, query_feature: np.ndarray, query_img_path: Path):
+    def _add_to_embedding_store(self, query_feature: np.ndarray, query_img_path: str):
         try:
+            print("inside embedding")
             self._append(query_feature, query_img_path)
         except ValueError as e:
             print(e)
             
-    def mark_as_processed(self, query_feature: np.ndarray, query_img_path: Path, query_face_paths: List[str] ):
+    def mark_as_processed(self, query_feature: np.ndarray, query_img_path: str, query_face_paths: List[str] ):
         store_in_redis(query_img_path, query_face_paths)
         
+        print("embedding start")
         #store in embedding_store
         from threading import Thread
-        thread = Thread(target = self._add_to_embedding_store, args=(query_feature, query_img_path))  
-        #thread.daemon = True  # Dies with the main thread
+        thread = Thread(target = self._add_to_embedding_store, args=(query_feature, query_img_path))   
         thread.start() 
+        print("embedding end")
 
 embeddings_handler = EmbeddingsStore(database)
 
