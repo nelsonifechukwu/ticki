@@ -17,15 +17,16 @@ from retinaface import RetinaFace
 
 from werkzeug.datastructures import FileStorage
 
-os.environ["TF_MPS_ENABLED"] = "0"
 import logging
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s: %(levelname)s] %(message)s',
 )
 logger = logging.getLogger(__name__)
+import coloredlogs
+coloredlogs.install(level='INFO', logger=logger)
 
-
+os.environ["TF_MPS_ENABLED"] = "0"
 class ImageProcessor:
     base_model = VGG16(weights='imagenet')
     model = Model(inputs=base_model.input, outputs=base_model.get_layer('fc1').output)
