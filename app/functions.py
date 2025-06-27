@@ -5,19 +5,12 @@ from .cbir import ImageProcessor
 from typing import List
 from pathlib import Path
 from threading import Thread
-from app import app
-
 
 database = Path("app/static/database")
 fe = ImageProcessor(database)
-celery_app = Celery('functions', broker='redis://localhost:6379/0')
+celery_app = Celery('tasks', broker='redis://localhost:6379/0')
 redis_client = redis.Redis(host='localhost', port=6379, db=1)
 
-@app.context_processor
-def inject_base_path():
-    base_path = Path("app/static") 
-    img_data_path = fe.img_data.relative_to(base_path)
-    return {"img_data_path": str(img_data_path) + "/"} 
 #celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
 #celery_app.conf.worker_deduplicate_successful_tasks = True
 #celery_app.conf.task_acks_late=True
@@ -99,7 +92,7 @@ def _store_in_redis(img_path: Path, faces_path: List[str]):
         for face_path in faces_path:
             face_img_name = Path(face_path).name
             redis_client.setnx(face_img_name, "completed")
-     
+            
         if new_upload:
             print(f"Uploaded {img_name} successfully stored in Redis")
         else:
