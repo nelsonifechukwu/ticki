@@ -35,6 +35,7 @@ def extract_faces_batch(image_paths: List[str], reprocess=False):
 
     group(tasks).apply_async()
 
+@celery_app.task
 def extract_all_faces(reprocess=False):
     img_data = fe.img_data
     allowed_exts = ("jpg", "png", "jpeg")
@@ -69,12 +70,16 @@ def convert_faces_to_embeddings_batch(faces_path: List[str], reprocess=False):
         return
     group(tasks).apply_async()
 
-def convert_all_faces_to_embeddings(reprocess=False):
+@celery_app.task
+def convert_all_faces_to_embeddings(reprocess=True):
     allowed_exts = ("jpg", "png", "jpeg")
     faces_repo = fe.extracted_faces_path
     faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
     convert_faces_to_embeddings_batch.delay(faces_repo_list, reprocess)  
 
+def chain_tasks(reprocess=False):
+    #we chain groups 
+    chain(extract_all_faces.s(reprocess) | convert_all_faces_to_embeddings.s())().get()
 @celery_app.task(ignore_result=True)
 def _store_in_redis(img_path: str, faces_path: List[str]):
     try:
