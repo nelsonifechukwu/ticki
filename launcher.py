@@ -8,7 +8,7 @@ def run_process(command):
     return subprocess.Popen(command, shell=True)
 
 def tasks_completed():
-    from app.tasks import celery_app 
+    from app.celery import celery_app 
 
     insp = celery_app.control.inspect()
     scheduled = insp.scheduled()
@@ -21,6 +21,16 @@ def tasks_completed():
             return False
     return True
 
+
+def wait_until_tasks_finish(phase: str, poll_interval=2):
+    logger.info(f"📌 Waiting for Celery to complete: {phase} ...")
+    while True:
+        if tasks_completed():
+            logger.info(f"✅ {phase} completed.")
+            break
+        logger.info(f"⏳ {phase} in progress...")
+        time.sleep(poll_interval)
+
 if __name__ == "__main__":
     try:
         logger.info("Starting Redis server...")
@@ -28,7 +38,7 @@ if __name__ == "__main__":
         time.sleep(2)
 
         logger.info("Starting Celery workers...")
-        celery = run_process("celery -A app.tasks worker --loglevel=info --concurrency=5 --pool threads") 
+        celery = run_process("celery -A app.celery worker --loglevel=info --concurrency=5 --pool threads") 
         time.sleep(2)
 
         logger.info("Starting Flask application...") 
@@ -37,29 +47,24 @@ if __name__ == "__main__":
         logger.info("🚀 All services are up and running!")
 
         logger.info("Face extraction Started...")
-        from app.tasks import redis_client, extract_all_faces
-        reprocess = False
+        from app.tasks import extract_all_faces, convert_all_faces_to_embeddings
+        from app.celery import redis_client
+        reprocess = True
         if reprocess:
             redis_client.flushdb()
-        extract_all_faces(reprocess) 
 
-        while True:
-            logger.info("Celery is still extracting faces...")
-            if tasks_completed():
-                logger.info("✅ Face extraction completed.")
-                logger.info("✅ Face -> Embeddings Started.")
-                from app.tasks import convert_all_faces_to_embeddings
-                convert_all_faces_to_embeddings(reprocess)
-                logger.info("Celery is converting face to embeddings...")
-                while True:
-                    if tasks_completed():
-                        logger.info("✅ Face -> embeddings completed.")
-                        break
-                break
-            time.sleep(2)
+        logger.info("🚀 Starting face extraction...")
+        extract_all_faces(reprocess)
+        wait_until_tasks_finish("Face Extraction")
+
+        logger.info("🚀 Starting feature embedding...")
+        convert_all_faces_to_embeddings(reprocess)
+        wait_until_tasks_finish("Face Embedding")
 
         logger.info("Celery & Flask are still running... Press CTRL+C to exit.")
         flask.wait()
+        # celery.terminate()
+        # celery.wait()
 
     except KeyboardInterrupt:
         logger.info("Stopping all services...")
