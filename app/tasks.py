@@ -1,18 +1,10 @@
-from celery import Celery, group
-import redis
 from .cbir import ImageProcessor, logger
 from typing import List
 from pathlib import Path
+from .celery import *
 
 database = Path("app/static/database")
 fe = ImageProcessor(database)
-celery_app = Celery('tasks', broker='redis://localhost:6379/0')
-redis_client = redis.Redis(host='localhost', port=6379, db=1) 
-
-	
-#celery_app.conf.broker_transport_options = {'visibility_timeout': 9999999}
-#celery_app.conf.worker_deduplicate_successful_tasks = True
-#celery_app.conf.task_acks_late=True
 
 @celery_app.task(ignore_result=True) 
 def extract_faces(image_path: str):
