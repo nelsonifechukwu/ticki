@@ -24,14 +24,15 @@ def extract_faces(image_path: str):
 
 @celery_app.task(ignore_result=True)
 def extract_faces_batch(image_paths: List[str], reprocess=False):
-    if reprocess:
-        tasks = [extract_faces.s(path) for path in image_paths]
-    else:
-        tasks = [
-            extract_faces.s(path)
-            for path in image_paths
-            if not redis_client.exists(Path(path).name)
-        ]
+    tasks = [
+        extract_faces.s(path)
+        for path in image_paths
+        if reprocess or not redis_client.exists(Path(path).name)
+    ]
+    if not tasks:
+        logger.info("No new images to process. All images already processed.")
+        return
+
     group(tasks).apply_async()
 
 def extract_all_faces(reprocess=False):
@@ -58,14 +59,14 @@ def convert_faces_to_embeddings(face_path: str):
 
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings_batch(faces_path: List[str], reprocess=False):
-    if reprocess:
-        tasks = [convert_faces_to_embeddings.s(path) for path in faces_path]
-    else:
-        tasks = [
-            convert_faces_to_embeddings.s(path)
-            for path in faces_path
-            if not redis_client.exists(Path(path).name)
-        ]
+    tasks = [
+        convert_faces_to_embeddings.s(path)
+        for path in faces_path
+        if reprocess or not redis_client.exists(Path(path).name)
+    ]
+    if not tasks:
+        logger.info("No new faces to process. All faces already processed.")
+        return
     group(tasks).apply_async()
 
 def convert_all_faces_to_embeddings(reprocess=False):
