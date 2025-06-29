@@ -47,12 +47,12 @@ if __name__ == "__main__":
         logger.info("🚀 All services are up and running!")
 
         logger.info("Face extraction Started...")
-        from app.tasks import chain_tasks
+        from app.tasks import main
         from app.celery import redis_client
         reprocess = True
         if reprocess:
             redis_client.flushdb()
-        chain_tasks(reprocess)
+        main(reprocess) 
         # logger.info("🚀 Starting face extraction...")
         # extract_all_faces(reprocess)
         # wait_until_tasks_finish("Face Extraction")

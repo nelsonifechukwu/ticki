@@ -6,7 +6,8 @@ from .celery import *
 database = Path("app/static/database")
 fe = ImageProcessor(database)
 
-@celery_app.task(ignore_result=True) 
+# ---- Celery Tasks ----
+@celery_app.task(ignore_result=True)
 def extract_faces(image_path: str):
     # Ensure idempotency: skip processing if this image_path was already handled (e.g., due to Celery task duplication)
     img_name = Path(image_path).name
@@ -21,26 +22,6 @@ def extract_faces(image_path: str):
         logger.error(f"❌ Face extraction from {img_name} failed: {e}")
         redis_client.set(img_name, f"in-complete: {e}")
         raise
-
-@celery_app.task(ignore_result=True)
-def extract_faces_batch(image_paths: List[str], reprocess=False):
-    tasks = [
-        extract_faces.s(path)
-        for path in image_paths
-        if reprocess or not redis_client.exists(Path(path).name)
-    ]
-    if not tasks:
-        logger.info("No new images to process. All images already processed.")
-        return
-
-    group(tasks).apply_async()
-
-@celery_app.task
-def extract_all_faces(reprocess=False):
-    img_data = fe.img_data
-    allowed_exts = ("jpg", "png", "jpeg")
-    img_data_list = [str(img) for img in img_data.iterdir() if str(img).lower().endswith(allowed_exts)]
-    extract_faces_batch.delay(img_data_list, reprocess)
 
 @celery_app.task(ignore_result=True)
 def convert_faces_to_embeddings(face_path: str):
@@ -58,31 +39,51 @@ def convert_faces_to_embeddings(face_path: str):
         redis_client.set(face_img_name, f"in-complete_f: {e}")
         raise
 
-@celery_app.task(ignore_result=True)
-def convert_faces_to_embeddings_batch(faces_path: List[str], reprocess=False):
-    tasks = [
-        convert_faces_to_embeddings.s(path)
-        for path in faces_path
-        if reprocess or not redis_client.exists(Path(path).name)
-    ]
-    if not tasks:
-        logger.info("No new faces to process. All faces already processed.")
-        return
-    group(tasks).apply_async()
-
 @celery_app.task
-def convert_all_faces_to_embeddings(reprocess=True):
+def convert_all_faces_to_embeddings(reprocess=False):
     allowed_exts = ("jpg", "png", "jpeg")
     faces_repo = fe.extracted_faces_path
     faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
-    convert_faces_to_embeddings_batch.delay(faces_repo_list, reprocess)  
 
-def chain_tasks(reprocess=False):
-    #we chain groups 
-    chain(extract_all_faces.s(reprocess) | convert_all_faces_to_embeddings.s())().get()
+    tasks = [
+        convert_faces_to_embeddings.s(path)
+        for path in faces_repo_list
+        if reprocess or not redis_client.exists(Path(path).name)
+    ]
+
+    if not tasks:
+        logger.info("No new faces to process. All faces already processed.")
+        return
+
+    logger.info("🚀 Starting feature extraction for all faces...")
+    group(tasks).apply_async()
+
+def extract_all_faces(reprocess=False):
+    allowed_exts = ("jpg", "png", "jpeg")
+    img_data = fe.img_data
+    img_data_list = [str(img) for img in img_data.iterdir() if str(img).lower().endswith(allowed_exts)]
+
+    face_tasks = [
+        extract_faces.s(path)
+        for path in img_data_list
+        if reprocess or not redis_client.exists(Path(path).name)
+    ]
+
+    if not face_tasks:
+        logger.info("No images to process. Skipping extraction and embedding.")
+        return
+
+    logger.info("🚀 Starting face extraction...")
+    return face_tasks
+# ---- Main controller function ----
+def main(reprocess=False):
+    #use .si in the chained task, cause the first group doesn't 
+    #return anything...
+    chord(extract_all_faces(reprocess))(convert_all_faces_to_embeddings.si(reprocess))
+
 @celery_app.task(ignore_result=True)
 def _store_in_redis(img_path: str, faces_path: List[str]):
-    try:
+    try: 
         redis_client.ping()
         new_upload = False
         img_name = Path(img_path).name
