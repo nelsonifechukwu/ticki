@@ -77,8 +77,7 @@ def extract_all_faces(reprocess=False):
     return face_tasks
 # ---- Main controller function ----
 def main(reprocess=False):
-    #use .si in the chained task, cause the first group doesn't 
-    #return anything...
+    #use .si in the chained task, cause the first group doesn't return anything...
     chord(extract_all_faces(reprocess))(convert_all_faces_to_embeddings.si(reprocess))
 
 @celery_app.task(ignore_result=True)
