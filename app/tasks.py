@@ -53,7 +53,7 @@ def convert_all_faces_to_embeddings(reprocess=False):
 
     if not tasks:
         logger.info("No new faces to process. All faces already processed.")
-        return
+        return None
 
     logger.info("🚀 Starting feature extraction for all faces...")
     group(tasks).apply_async()
@@ -71,14 +71,14 @@ def extract_all_faces(reprocess=False):
 
     if not face_tasks:
         logger.info("No images to process. Skipping extraction and embedding.")
-        return
+        return None
 
     logger.info("🚀 Starting face extraction...")
     return face_tasks
 # ---- Main controller function ----
 def main(reprocess=False):
     #use .si in the chained task, cause the first group doesn't return anything...
-    chord(extract_all_faces(reprocess))(convert_all_faces_to_embeddings.si(reprocess))
+    chord(extract_all_faces(reprocess) or [])(convert_all_faces_to_embeddings.si(reprocess) or [])
 
 @celery_app.task(ignore_result=True)
 def _store_in_redis(img_path: str, faces_path: List[str]):
