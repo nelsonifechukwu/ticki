@@ -1,4 +1,17 @@
 <!DOCTYPE html>
+{% macro render_image(src, caption=None) %}
+<div>
+  <img
+    src="{{ src }}"
+    alt="IMG!"
+    style="max-width: 150px; max-height: 150px; height: auto; width: auto"
+  />
+  {% if caption %}
+  <figcaption>{{ caption }}</figcaption>
+  {% endif %}
+</div>
+{% endmacro %}
+
 <html>
   <head>
     <meta http-equiv="refresh" content="" />
@@ -51,34 +64,11 @@
           </form>
         </div>
         <div class="selected-imgs">
-          {%if input_faces%} {% for face_name in input_faces %}
-          <div> <img
-              src="{{url_for('static', filename = extracted_faces_path ~ face_name)}}"
-              alt="IMG!"
-              style="
-                max-width: 150px;
-                max-height: 150px;
-                height: auto;
-                width: auto;
-              " 
-            /></div>
-          {%endfor%} {%endif%} 
-          
-          {% for info in file_info %}
-          <div>
-            <img
-              src="{{url_for('static', filename = img_data_path ~ info[1])}}"
-              alt="IMG!"
-              style="
-                max-width: 150px;
-                max-height: 150px;
-                height: auto;
-                width: auto;
-              " 
-            />
-            <figcaption>{{info[0]}}</figcaption>
-          </div>
-          {% endfor %}
+          {%if input_faces%} {% for face_name in input_faces %} {{
+          render_image(url_for('static', filename=extracted_faces_path ~
+          face_name)) }} {%endfor%} {%endif%} {% for info in file_info %} {{
+          render_image(url_for('static', filename=img_data_path ~ info[1]),
+          caption=info[0])}} {% endfor %}
         </div>
       </div>
       <div class="footer">@Ticki.</div>
