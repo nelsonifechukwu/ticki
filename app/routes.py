@@ -15,12 +15,17 @@ from .embeddings import embeddings_handler
 all_face_embeddings, all_face_names = embeddings_handler.load_allfaces_embeddings(external=False)
 
 @app.context_processor 
-def inject_base_path():
+def inject_paths():
     base_path = Path("app/static") 
-    img_data_path = fe.img_data.relative_to(base_path)
-    return {"img_data_path": str(img_data_path) + "/"} 
 
-class HomeResource(Resource):
+    img_data_path = fe.img_data.relative_to(base_path)
+    extracted_faces_path = fe.extracted_faces_path.relative_to(base_path)
+
+    return {
+        "img_data_path": str(img_data_path) + "/",
+        "extracted_faces_path": str(extracted_faces_path) + "/"
+    }
+class HomeResource(Resource): 
     def get(self):
         return make_response(render_template("main.html"), 200)
 
@@ -33,6 +38,9 @@ class HomeResource(Resource):
         query_face_paths_str = fe.extract_faces(query_img_path)
         query_face_paths = ast.literal_eval(query_face_paths_str)
         
+        if len(query_face_paths)>1:
+            query_faces_names = [Path(face_path).name for face_path in query_face_paths]
+            return make_response(render_template("main.html", input_faces=query_faces_names), 200)
         #this will be used in case of multiple faces during an upload. Select only one img for now
         #store also the embeddings of the multiple faces marked as processed
         query_face_path = Path(query_face_paths[-1])
