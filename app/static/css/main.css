@@ -119,22 +119,44 @@ body {
           opacity: 0;
           height: 0;
         }
-
       }
     }
 
-    .selected-imgs {
-      margin-top: 20px;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr); /* Always 4 columns */
-      grid-auto-rows: 150px; /* Defines row height */
-      gap: 10px;
-      row-gap: 40px;
+    .img-selections {
+      display: flex;
+      flex-direction: column;
       width: 100%;
-      overflow-y: auto; /* Enables scrolling when rows exceed 5 */
+      height: auto;
+      overflow-x: auto;
 
-      img {
-        border-radius: 10px;
+      .multiple-input-faces {
+        overflow-x: auto;
+        flex: 0.7;
+        margin-top: 20px;
+        display: grid;
+        grid-auto-flow: column;
+        column-gap: 20px;
+        grid-template-columns: repeat(4, 1fr);
+
+        img {
+          border-radius: 10px;
+        }
+      }
+
+      .selected-imgs {
+        flex: 2.3;
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr); /* Always 4 columns */
+        grid-auto-rows: 150px; /* Defines row height */
+        gap: 10px;
+        row-gap: 40px;
+        width: 100%;
+        overflow-y: auto; /* Enables scrolling when rows exceed 5 */
+
+        img {
+          border-radius: 10px;
+        }
       }
     }
   }
