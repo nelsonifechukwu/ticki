@@ -63,12 +63,18 @@
             <div><input type="submit" /></div>
           </form>
         </div>
-        <div class="selected-imgs">
-          {%if input_faces%} {% for face_name in input_faces %} {{
-          render_image(url_for('static', filename=extracted_faces_path ~
-          face_name)) }} {%endfor%} {%endif%} {% for info in file_info %} {{
-          render_image(url_for('static', filename=img_data_path ~ info[1]),
-          caption=info[0])}} {% endfor %}
+        <div class="img-selections">
+
+          <div class="multiple-input-faces">
+            {% for face_name in input_faces %} {{ render_image(url_for('static',
+            filename=extracted_faces_path ~ face_name))}} {% endfor %}
+          </div>
+
+
+          <div class="selected-imgs">
+            {% for info in similarity_info %} {{ render_image(url_for('static',
+            filename=img_data_path ~ info[1]), caption=info[0])}} {% endfor %}
+          </div>
         </div>
       </div>
       <div class="footer">@Ticki.</div>
