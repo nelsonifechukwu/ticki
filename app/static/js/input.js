@@ -55,10 +55,7 @@ const custom_form_submit_handler = async (ev) => {
     });
 
     const html_text = await response.text();
-    const parsed_doc = new DOMParser().parseFromString(
-      html_text,
-      "text/html"
-    );
+    const parsed_doc = new DOMParser().parseFromString(html_text, "text/html");
 
     // Find the newly rendered selected-imgs div from response
     const new_selected_imgs = parsed_doc.querySelector(".selected-imgs");
@@ -73,7 +70,12 @@ const custom_form_submit_handler = async (ev) => {
     const current_multiple_input_faces = document.querySelector(
       ".multiple-input-faces"
     );
-    if (new_input_faces && current_multiple_input_faces) {
+    if (
+      new_input_faces &&
+      current_multiple_input_faces &&
+      new_input_faces.querySelectorAll("div").length > 0
+    ) {
+      current_multiple_input_faces.style.display = "grid";
       current_multiple_input_faces.innerHTML = new_input_faces.innerHTML;
     } else {
       console.warn("Could not find .multiple-input-faces in response.");
