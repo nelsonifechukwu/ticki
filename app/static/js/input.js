@@ -1,109 +1,87 @@
-const imgInput = document.getElementById("input-img-preview");
-const imgInputLabel = document.getElementById("input-img-label");
-const imgContainer = document.querySelector(".input-img-container");
+const img_input = document.getElementById("input-img-preview");
+const img_input_label = document.getElementById("input-img-label");
+const img_container = document.querySelector(".input-img-container");
+const form_element = document.querySelector(".img-input-form");
 
-//----Implement search for multiple images later on----------
-
-// const addImgHandler = () => {
-//     const file = imgInputHelper.files[0];
-//     if (!file) return;
-//     // Generate img preview
-//     const reader = new FileReader();
-//     reader.readAsDataURL(file);
-//     reader.onload = () => {
-//       const newImg = document.createElement("img");
-//       newImg.src = reader.result;
-//       if imgContainer.>1: return;
-//       imgContainer.insertBefore(newImg, imgInputHelperLabel);
-//     };
-
-//     // Store img file
-//     imgFiles.push(file);
-//     // Reset image input
-//     imgInputHelper.value = "";
-//     return;
-//   };
-const previewImgHandler = () => {
-  //we use imgFiles to hold the actual img, since it cannot be
-  //reconstructed from newImg.src
-  const file = imgInput.files[0];
+const preview_img_handler = () => {
+  const file = img_input.files[0];
   if (!file) return;
 
   // Generate img preview
   const reader = new FileReader();
   reader.readAsDataURL(file);
+
   reader.onload = () => {
-    const newImg = document.createElement("img");
-    newImg.src = reader.result; //get the input img
+    const new_img = document.createElement("img");
+    new_img.src = reader.result; //get the input img
 
     // Check if imgContainer already contains an img element
-    const existingImg = imgContainer.querySelector("img");
-    if (existingImg) {
-      // If there's already an img element, replace it with the new input
-      imgContainer.replaceChild(newImg, existingImg);
-      imgFiles[0] = file;
+    const existing_img = img_container.querySelector("img");
+    if (existing_img) {
+      img_container.replaceChild(new_img, existing_img);
     } else {
-      // If no img element, insert the new input before the label
-      imgContainer.insertBefore(newImg, imgInputLabel);
-      imgFiles = [file];
+      img_container.insertBefore(new_img, img_input_label);
     }
   };
-  // Reset image input
-  //imgInput.value = "";
 };
 
-const customFormSubmitHandler = async (ev) => {
-  ev.preventDefault(); //prevent form submission
-  const _ImgInput = document.getElementById("q-img");
+const custom_form_submit_handler = async (ev) => {
+  ev.preventDefault();
+
+  const q_img_input = document.getElementById("q-img");
 
   //check if there's any input img
-  if (!imgInput.files || imgInput.files.length === 0) {
+  if (!img_input.files || img_input.files.length === 0) {
     const required_content = document.querySelector(".is-required");
-    
-    // Remove animation class if already applied
+
     required_content.classList.remove("is-required");
-
-    // Force reflow to reset animation
-    void required_content.offsetWidth;
-
-    // Re-add the animation class
+    void required_content.offsetWidth; // force reflow
     required_content.classList.add("is-required");
     required_content.style.display = "block";
 
-    console.log("Input is empty");
+    console.warn("Input image is required");
     return;
   }
 
-  _ImgInput.files = imgInput.files;
+  q_img_input.files = img_input.files;
   form = ev.target; // don't submit form to server w/.submit()
 
   // Prepare form data
-  const formData = new FormData(form);
+  const form_data = new FormData(form);
   try {
     const response = await fetch(form.action, {
       method: "POST",
-      body: formData,
+      body: form_data,
     });
 
-    const html = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+    const html_text = await response.text();
+    const parsed_doc = new DOMParser().parseFromString(
+      html_text,
+      "text/html"
+    );
 
     // Find the newly rendered selected-imgs div from response
-    const newImgsDiv = doc.querySelector(".selected-imgs");
-    const currentImgsDiv = document.querySelector(".selected-imgs");
-
-    if (newImgsDiv && currentImgsDiv) {
-      currentImgsDiv.innerHTML = newImgsDiv.innerHTML;
+    const new_selected_imgs = parsed_doc.querySelector(".selected-imgs");
+    const current_selected_imgs = document.querySelector(".selected-imgs");
+    if (new_selected_imgs && current_selected_imgs) {
+      current_selected_imgs.innerHTML = new_selected_imgs.innerHTML;
     } else {
-      console.warn("Could not find .selected-imgs in response.");
+      console.warn("Could not update .selected-imgs from response.");
+    }
+
+    const new_input_faces = parsed_doc.querySelector(".multiple-input-faces");
+    const current_multiple_input_faces = document.querySelector(
+      ".multiple-input-faces"
+    );
+    if (new_input_faces && current_multiple_input_faces) {
+      current_multiple_input_faces.innerHTML = new_input_faces.innerHTML;
+    } else {
+      console.warn("Could not find .multiple-input-faces in response.");
     }
   } catch (err) {
     console.error("Failed to submit form:", err);
   }
 };
 
-imgInput.addEventListener("change", previewImgHandler);
-document
-  .querySelector(".img-input-form")
-  .addEventListener("submit", customFormSubmitHandler);
+img_input.addEventListener("change", preview_img_handler);
+form_element.addEventListener("submit", custom_form_submit_handler);
