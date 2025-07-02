@@ -130,10 +130,10 @@ body {
       overflow-x: auto;
 
       .multiple-input-faces {
+        display: none;
         overflow-x: auto;
         flex: 0.7;
         margin-top: 20px;
-        display: grid;
         grid-auto-flow: column;
         column-gap: 20px;
         grid-template-columns: repeat(4, 1fr);

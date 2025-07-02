@@ -21,7 +21,7 @@ def inject_paths():
     img_data_path = fe.img_data.relative_to(base_path)
     extracted_faces_path = fe.extracted_faces_path.relative_to(base_path) 
 
-    return {
+    return { 
         "img_data_path": str(img_data_path) + "/",
         "extracted_faces_path": str(extracted_faces_path) + "/"
     } 
@@ -47,7 +47,8 @@ class HomeResource(Resource):
         context = {
             "input_faces": [],
             "similarity_info": []
-        }
+        }  
+        #handle input img w/multiple faces
         if len(query_face_paths) > 1:
             query_faces_names = [Path(face_path).name for face_path in query_face_paths]
             context["input_faces"] = query_faces_names

@@ -70,7 +70,6 @@
             filename=extracted_faces_path ~ face_name))}} {% endfor %}
           </div>
 
-
           <div class="selected-imgs">
             {% for info in similarity_info %} {{ render_image(url_for('static',
             filename=img_data_path ~ info[1]), caption=info[0])}} {% endfor %}
