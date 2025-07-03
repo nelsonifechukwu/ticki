@@ -66,17 +66,20 @@ const custom_form_submit_handler = async (ev) => {
       console.warn("Could not update .selected-imgs from response.");
     }
 
-    const new_input_faces = parsed_doc.querySelector(".multiple-input-faces");
-    const current_multiple_input_faces = document.querySelector(
-      ".multiple-input-faces"
+    const n_multiple_faces_form = parsed_doc.querySelector(
+      ".multiple-faces-form"
     );
-    if (
-      new_input_faces &&
-      current_multiple_input_faces &&
-      new_input_faces.querySelectorAll("div").length > 0
-    ) {
-      current_multiple_input_faces.style.display = "grid";
-      current_multiple_input_faces.innerHTML = new_input_faces.innerHTML;
+    const c_submit_multiple_faces = document.querySelector(
+      ".multiple-faces-form"
+    );
+    const submit_button = document.querySelector(".submit-multiple-faces");
+
+    if (n_multiple_faces_form && c_submit_multiple_faces) {
+      if (n_multiple_faces_form.querySelectorAll("div").length > 0) {
+        submit_button.style.display = "block";
+        c_submit_multiple_faces.style.display = "block";
+      }
+      c_submit_multiple_faces.innerHTML = n_multiple_faces_form.innerHTML;
     } else {
       console.warn("Could not find .multiple-input-faces in response.");
     }
