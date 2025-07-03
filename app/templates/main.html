@@ -60,31 +60,32 @@
           </form>
         </div>
         <div class="img-selections">
-          <form
-            method="POST"
-            action="/multiple-input-faces"
-            class="multiple-faces-form"
-            enctype="multipart/form-data"
-          >
-            <div class="multiple-input-faces">
-              {% for face_name in input_faces %}
-              <label class="selectable-face">
-                <input
-                  type="checkbox"
-                  name="selected_faces"
-                  value="{{ face_name }}"
-                  class="face-select-checkbox"
-                />
-                {{ render_image(url_for('static', filename=extracted_faces_path
-                ~ face_name)) }}
-              </label>
-              {% endfor %}
-            </div>
-            <button type="submit" class="submit-multiple-faces">
-              Submit Selected Faces
-            </button>
-          </form>
-
+          <div class="multiple-faces-container">
+            <form
+              method="POST"
+              action="/multiple-input-faces"
+              id="multiple-faces-form"
+              enctype="multipart/form-data"
+            >
+              <div class="multiple-faces">
+                {% for face_name in input_faces %}
+                <label class="selectable-face">
+                  <input
+                    type="checkbox"
+                    name="selected_faces"
+                    value="{{ face_name }}"
+                    class="face-select-checkbox"
+                  />
+                  {{ render_image(url_for('static', filename=extracted_faces_path
+                  ~ face_name)) }}
+                </label>
+                {% endfor %}
+              </div>
+              <button type="submit" class="submit-multiple-faces">
+                Submit Selected Faces
+              </button>
+            </form>
+          </div>
           <div class="selected-imgs">
             {% for info in similarity_info %} {{ render_image(url_for('static',
             filename=img_data_path ~ info[1]), caption=info[0])}} {% endfor %}

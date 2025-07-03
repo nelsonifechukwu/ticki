@@ -129,35 +129,37 @@ body {
       height: auto;
       overflow-x: auto;
 
-      .multiple-faces-form,
-      .submit-multiple-faces {
+      .multiple-faces-container {
         display: none;
-      }
-
-      .multiple-input-faces {
-        display: grid;
-        overflow-x: auto;
         flex: 0.7;
         margin-top: 20px;
-        grid-auto-flow: column;
-        column-gap: 20px;
-        grid-template-columns: repeat(4, 1fr);
 
-        img {
-          border-radius: 10px;
-          max-width: 150px;
-          max-height: 150px;
-          height: auto;
-          width: auto;
-        }
+        .multiple-faces {
+          display: grid;
+          overflow-x: auto;
+          grid-auto-flow: column;
+          column-gap: 20px;
+          grid-template-columns: repeat(4, 1fr);
 
-        .selectable-face {
-          position: relative;
+          img {
+            border-radius: 10px;
+            max-width: 150px;
+            max-height: 150px;
+            height: auto;
+            width: auto;
+          }
 
-          .face-select-checkbox {
-            position: absolute;
-            top: 0px;
-            right: 0px;
+          .selectable-face {
+            position: relative;
+
+            .face-select-checkbox {
+              position: absolute;
+              top: 0px;
+              right: 0px;
+              height: 15px;
+              width: 15px;
+              /* make the top-right curvy */
+            }
           }
         }
       }

@@ -60,28 +60,33 @@ const custom_form_submit_handler = async (ev) => {
     // Find the newly rendered selected-imgs div from response
     const new_selected_imgs = parsed_doc.querySelector(".selected-imgs");
     const current_selected_imgs = document.querySelector(".selected-imgs");
+
     if (new_selected_imgs && current_selected_imgs) {
       current_selected_imgs.innerHTML = new_selected_imgs.innerHTML;
     } else {
       console.warn("Could not update .selected-imgs from response.");
     }
 
-    const n_multiple_faces_form = parsed_doc.querySelector(
-      ".multiple-faces-form"
+    const current_multiple_faces_container = document.querySelector(
+      ".multiple-faces-container"
     );
-    const c_submit_multiple_faces = document.querySelector(
-      ".multiple-faces-form"
-    );
-    const submit_button = document.querySelector(".submit-multiple-faces");
 
-    if (n_multiple_faces_form && c_submit_multiple_faces) {
-      if (n_multiple_faces_form.querySelectorAll("div").length > 0) {
-        submit_button.style.display = "block";
-        c_submit_multiple_faces.style.display = "block";
-      }
-      c_submit_multiple_faces.innerHTML = n_multiple_faces_form.innerHTML;
+    const new_multiple_faces_container = parsed_doc.querySelector(
+      ".multiple-faces-container"
+    );
+
+    const new_multiple_faces =
+      new_multiple_faces_container.querySelector(".multiple-faces");
+
+    const new_all_faces =
+      new_multiple_faces.querySelectorAll(".selectable-face");
+
+    if (new_all_faces.length > 0) {
+      current_multiple_faces_container.innerHTML =
+        new_multiple_faces_container.innerHTML;
+      current_multiple_faces_container.style.display = "block";
     } else {
-      console.warn("Could not find .multiple-input-faces in response.");
+      current_multiple_faces_container.style.display = "none";
     }
   } catch (err) {
     console.error("Failed to submit form:", err);
