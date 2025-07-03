@@ -78,7 +78,6 @@ class MultipleInputFacesResource(HomeResource):
     def post(self):
         threshold = 0.67
         selected_faces = request.form.getlist("selected_faces")
-        print(selected_faces) 
         if not selected_faces:
             return make_response(render_template("main.html", similarity_info=[]), 200)
 
