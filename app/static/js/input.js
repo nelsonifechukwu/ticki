@@ -67,21 +67,18 @@ const custom_form_submit_handler = async (ev) => {
       console.warn("Could not update .selected-imgs from response.");
     }
 
+    //Find newly rendered .multiple_faces_container from response
     const current_multiple_faces_container = document.querySelector(
       ".multiple-faces-container"
     );
-
-    const new_multiple_faces_container = parsed_doc.querySelector(
-      ".multiple-faces-container"
-    );
-
-    const new_multiple_faces =
-      new_multiple_faces_container.querySelector(".multiple-faces");
-
-    const new_all_faces =
-      new_multiple_faces.querySelectorAll(".selectable-face");
+    const new_all_faces = parsed_doc
+      .querySelector(".multiple-faces-container .multiple-faces")
+      ?.querySelectorAll(".selectable-face");
 
     if (new_all_faces.length > 0) {
+      const new_multiple_faces_container = parsed_doc.querySelector(
+        ".multiple-faces-container"
+      );
       current_multiple_faces_container.innerHTML =
         new_multiple_faces_container.innerHTML;
       current_multiple_faces_container.style.display = "block";
@@ -95,3 +92,32 @@ const custom_form_submit_handler = async (ev) => {
 
 img_input.addEventListener("change", preview_img_handler);
 form_element.addEventListener("submit", custom_form_submit_handler);
+
+
+function bindMultipleFacesSubmit() {
+  const form = document.querySelector(".multiple-faces-form");
+  if (!form) return;
+
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const formData = new FormData(form);
+
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: formData,
+    });
+
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    const newSelectedImgs = doc.querySelector(".selected-imgss");
+    const currentImgs = document.querySelector(".selected-imgss");
+    if (newSelectedImgs && currentImgs) {
+      currentImgs.innerHTML = newSelectedImgs.innerHTML;
+    }
+  });
+}
+
+// Call it after every DOM update
+bindMultipleFacesSubmit();
