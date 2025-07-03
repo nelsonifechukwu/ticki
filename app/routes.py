@@ -76,10 +76,14 @@ class MultipleInputFacesResource(HomeResource):
         return make_response(render_template("main.html"), 200)
     
     def post(self):
+        context = { 
+            "input_faces": [],
+            "similarity_info": [] 
+        }  
         threshold = 0.67
         selected_faces = request.form.getlist("selected_faces")
         if not selected_faces:
-            return make_response(render_template("main.html", similarity_info=[]), 200)
+            return make_response(render_template("main.html", **context), 200)
 
         features: List[np.ndarray] = []
         for face_name in selected_faces:
@@ -88,7 +92,7 @@ class MultipleInputFacesResource(HomeResource):
             features.append(query_feature)
 
         if not features:
-            return make_response(render_template("main.html", similarity_info=[]), 200) 
+            return make_response(render_template("main.html", **context), 200) 
         
         results = [
             match
@@ -98,8 +102,9 @@ class MultipleInputFacesResource(HomeResource):
         
         #don't include duplicate imgs from the multiple search
         unique_result = list({name: (sim, name) for sim, name in results}.values())
-            
-        return make_response(render_template("main.html", similarity_info=unique_result), 200)   
+        
+        context["similarity_info"] = unique_result
+        return make_response(render_template("main.html", **context), 200)   
     
 api = Api(app)
 api.add_resource(HomeResource, "/", endpoint="index") 
