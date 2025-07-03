@@ -1,11 +1,7 @@
 <!DOCTYPE html>
 {% macro render_image(src, caption=None) %}
 <div>
-  <img
-    src="{{ src }}"
-    alt="IMG!"
-    style="max-width: 150px; max-height: 150px; height: auto; width: auto"
-  />
+  <img src="{{ src }}" alt="IMG!" />
   {% if caption %}
   <figcaption>{{ caption }}</figcaption>
   {% endif %}
@@ -64,11 +60,30 @@
           </form>
         </div>
         <div class="img-selections">
-
-          <div class="multiple-input-faces">
-            {% for face_name in input_faces %} {{ render_image(url_for('static',
-            filename=extracted_faces_path ~ face_name))}} {% endfor %}
-          </div>
+          <form
+            method="POST"
+            action="/multiple-input-faces"
+            class="multiple-faces-form"
+            enctype="multipart/form-data"
+          >
+            <div class="multiple-input-faces">
+              {% for face_name in input_faces %}
+              <label class="selectable-face">
+                <input
+                  type="checkbox"
+                  name="selected_faces"
+                  value="{{ face_name }}"
+                  class="face-select-checkbox"
+                />
+                {{ render_image(url_for('static', filename=extracted_faces_path
+                ~ face_name)) }}
+              </label>
+              {% endfor %}
+            </div>
+            <button type="submit" class="submit-multiple-faces">
+              Submit Selected Faces
+            </button>
+          </form>
 
           <div class="selected-imgs">
             {% for info in similarity_info %} {{ render_image(url_for('static',
