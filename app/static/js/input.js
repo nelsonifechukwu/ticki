@@ -1,7 +1,7 @@
 const img_input = document.getElementById("input-img-preview");
 const img_input_label = document.getElementById("input-img-label");
 const img_container = document.querySelector(".input-img-container");
-const form_element = document.querySelector(".img-input-form");
+const input_form_element = document.querySelector(".img-input-form");
 
 const preview_img_handler = () => {
   const file = img_input.files[0];
@@ -91,20 +91,22 @@ const custom_form_submit_handler = async (ev) => {
 };
 
 img_input.addEventListener("change", preview_img_handler);
-form_element.addEventListener("submit", custom_form_submit_handler);
+input_form_element.addEventListener("submit", custom_form_submit_handler);
 
+const multiple_faces_form_element = document.querySelector(
+  ".submit-multiple-faces"
+);
 
-function bindMultipleFacesSubmit() {
-  const form = document.querySelector(".multiple-faces-form");
-  if (!form) return;
+const bindMultipleFacesSubmit = async (ev) => {
+  ev.preventDefault();
+  form = ev.target; // don't submit form to server w/.submit()
 
-  form.addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    const formData = new FormData(form);
-
+  // Prepare form data
+  const form_data = new FormData(form);
+  try {
     const response = await fetch(form.action, {
       method: "POST",
-      body: formData,
+      body: form_data,
     });
 
     const html = await response.text();
@@ -116,8 +118,9 @@ function bindMultipleFacesSubmit() {
     if (newSelectedImgs && currentImgs) {
       currentImgs.innerHTML = newSelectedImgs.innerHTML;
     }
-  });
-}
+  } catch {
+    console.warn("something's wrong");
+  }
+};
 
-// Call it after every DOM update
-bindMultipleFacesSubmit();
+multiple_faces_form_element.addEventListener("submit", bindMultipleFacesSubmit);
