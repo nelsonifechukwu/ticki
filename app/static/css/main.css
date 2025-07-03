@@ -129,8 +129,13 @@ body {
       height: auto;
       overflow-x: auto;
 
-      .multiple-input-faces {
+      .multiple-faces-form,
+      .submit-multiple-faces {
         display: none;
+      }
+
+      .multiple-input-faces {
+        display: grid;
         overflow-x: auto;
         flex: 0.7;
         margin-top: 20px;
@@ -140,6 +145,20 @@ body {
 
         img {
           border-radius: 10px;
+          max-width: 150px;
+          max-height: 150px;
+          height: auto;
+          width: auto;
+        }
+
+        .selectable-face {
+          position: relative;
+
+          .face-select-checkbox {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+          }
         }
       }
 
@@ -156,6 +175,10 @@ body {
 
         img {
           border-radius: 10px;
+          max-width: 150px;
+          max-height: 150px;
+          height: auto;
+          width: auto;
         }
       }
     }
