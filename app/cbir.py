@@ -120,7 +120,7 @@ class ImageProcessor:
                 enforce_detection=False
             )[0]
 
-            embedding = np.array(embedding_obj["embedding"])
+            embedding = np.array(embedding_obj["embedding"], dtype=np.float64)
             embedding = embedding / np.linalg.norm(embedding)
 
             embeddings_path = self.extracted_faces_embeddings_path / face_path.name
