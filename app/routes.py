@@ -8,6 +8,7 @@ import sys
 sys.path.append("./")
 from pathlib import Path
 import ast
+from typing import List
 
 from .tasks import fe 
 from .embeddings import embeddings_handler
@@ -70,11 +71,31 @@ class HomeResource(Resource):
             if dists[i] >= threshold
         ]
         
-class MultipleInputFacesResource(Resource):
+class MultipleInputFacesResource(HomeResource):
     def get(self):
         return make_response(render_template("main.html"), 200)
+    
     def post(self):
-        pass
+        threshold = 0.67
+        selected_faces = request.form.getlist("selected_faces")
+        print(selected_faces) 
+        if not selected_faces:
+            return make_response(render_template("main.html", similarity_info=[]), 200)
+
+        features: List[np.ndarray] = []
+        for face_name in selected_faces:
+            face_path = fe.extracted_faces_path / face_name
+            query_feature = fe.extract_features(face_path).astype(float)
+            features.append(query_feature)
+
+        if not features:
+            return make_response(render_template("main.html", similarity_info=[]), 200) 
+
+        results = []
+        for face_feature in features:
+            results.extend(self._get_similar_faces(face_feature, threshold))
+            
+        return make_response(render_template("main.html", similarity_info=results), 200)
     
 api = Api(app)
 api.add_resource(HomeResource, "/", endpoint="index") 
