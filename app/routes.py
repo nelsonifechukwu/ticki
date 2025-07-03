@@ -61,15 +61,15 @@ class HomeResource(Resource):
         return make_response(render_template("main.html", **context), 200)    
 
     def _get_similar_faces(self, query_feature: np.ndarray, threshold: float):
-        # if not all_face_embeddings:
-        #     return None
         dists = [1 - distance.cosine(x, query_feature) for x in all_face_embeddings]
-        ids = np.argsort([-x for x in dists])  # descending order
-        return [
-            (dists[i], all_face_names[i])
-            for i in ids
-            if dists[i] >= threshold
-        ]
+
+        # Filter indices with distance >= threshold
+        filtered_ids = [i for i, d in enumerate(dists) if d >= threshold]
+
+        # Sort the filtered indices by descending distance
+        ids = sorted(filtered_ids, key=lambda i: dists[i], reverse=True)
+
+        return [(dists[i], all_face_names[i]) for i in ids]
         
 class MultipleInputFacesResource(HomeResource):
     def get(self):
@@ -89,12 +89,17 @@ class MultipleInputFacesResource(HomeResource):
 
         if not features:
             return make_response(render_template("main.html", similarity_info=[]), 200) 
-
-        results = []
-        for face_feature in features:
-            results.extend(self._get_similar_faces(face_feature, threshold))
+        
+        results = [
+            match
+            for face_feature in features
+            for match in self._get_similar_faces(face_feature, threshold)
+        ]#to extend the list
+        
+        #don't include duplicate imgs from the multiple search
+        unique_result = list({name: (sim, name) for sim, name in results}.values())
             
-        return make_response(render_template("main.html", similarity_info=results), 200)
+        return make_response(render_template("main.html", similarity_info=unique_result), 200)   
     
 api = Api(app)
 api.add_resource(HomeResource, "/", endpoint="index") 
