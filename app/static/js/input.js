@@ -2,7 +2,9 @@ const img_input = document.getElementById("input-img-preview");
 const img_input_label = document.getElementById("input-img-label");
 const img_container = document.querySelector(".input-img-container");
 const input_form_element = document.querySelector(".img-input-form");
-
+const multiple_faces_form_element = document.getElementById(
+  "multiple-faces-form"
+);
 const preview_img_handler = () => {
   const file = img_input.files[0];
   if (!file) return;
@@ -82,6 +84,15 @@ const custom_form_submit_handler = async (ev) => {
       current_multiple_faces_container.innerHTML =
         new_multiple_faces_container.innerHTML;
       current_multiple_faces_container.style.display = "block";
+
+      //re-bind the event listener to the replaced form
+      const new_form = current_multiple_faces_container.querySelector(
+        "#multiple-faces-form"
+      );
+      if (new_form) {
+        new_form.addEventListener("submit", bindMultipleFacesSubmit);
+      }
+
     } else {
       current_multiple_faces_container.style.display = "none";
     }
@@ -90,37 +101,54 @@ const custom_form_submit_handler = async (ev) => {
   }
 };
 
-img_input.addEventListener("change", preview_img_handler);
-input_form_element.addEventListener("submit", custom_form_submit_handler);
-
-const multiple_faces_form_element = document.querySelector(
-  ".submit-multiple-faces"
-);
-
 const bindMultipleFacesSubmit = async (ev) => {
   ev.preventDefault();
-  form = ev.target; // don't submit form to server w/.submit()
+  const form = ev.target;
 
-  // Prepare form data
   const form_data = new FormData(form);
+
   try {
     const response = await fetch(form.action, {
       method: "POST",
       body: form_data,
     });
 
-    const html = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+    const html_text = await response.text();
+    const parsed_doc = new DOMParser().parseFromString(html_text, "text/html");
 
-    const newSelectedImgs = doc.querySelector(".selected-imgss");
-    const currentImgs = document.querySelector(".selected-imgss");
-    if (newSelectedImgs && currentImgs) {
-      currentImgs.innerHTML = newSelectedImgs.innerHTML;
+    // Update selected images
+    const new_selected_imgs = parsed_doc.querySelector(".selected-imgs");
+    const current_selected_imgs = document.querySelector(".selected-imgs");
+
+    //don't display current_multiple_faces_container
+    const current_multiple_faces_container = document.querySelector(
+      ".multiple-faces-container"
+    );
+    current_multiple_faces_container.style.display = "none";
+
+    if (new_selected_imgs && current_selected_imgs) {
+      current_selected_imgs.innerHTML = new_selected_imgs.innerHTML;
+    } else {
+      console.warn("Could not update .selected-imgs from response.");
     }
-  } catch {
-    console.warn("something's wrong");
+  } catch (err) {
+    console.error("Failed to submit multiple faces form:", err);
   }
 };
 
-multiple_faces_form_element.addEventListener("submit", bindMultipleFacesSubmit);
+img_input.addEventListener("change", preview_img_handler);
+input_form_element.addEventListener("submit", custom_form_submit_handler);
+document.addEventListener("DOMContentLoaded", () => {
+  const multiple_faces_form_element = document.getElementById(
+    "multiple-faces-form"
+  );
+  if (multiple_faces_form_element) {
+    multiple_faces_form_element.addEventListener(
+      "submit",
+      bindMultipleFacesSubmit
+    );
+    console.log("✔️ Listener attached to #multiple-faces-form");
+  } else {
+    console.warn("⚠️ Form not found on DOMContentLoaded");
+  }
+});
