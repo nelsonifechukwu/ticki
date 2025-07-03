@@ -1,5 +1,5 @@
 from app import app
-import numpy as np
+import numpy as np  
 from scipy.spatial import distance
 from flask import request, render_template, make_response
 from flask_restful import Resource, Api
@@ -25,17 +25,15 @@ def inject_paths():
         "img_data_path": str(img_data_path) + "/",
         "extracted_faces_path": str(extracted_faces_path) + "/"
     } 
-
-# e.g. in your app/__init__.py or filters.py
 @app.template_filter('debug') 
 def debug_filter(value):
     print(f"[JINJA DEBUG] face_name: {value}")
     return ''  # Don't render anything in HTML
-class HomeResource(Resource):      
+class HomeResource(Resource):       
     def get(self):
         return make_response(render_template("main.html"), 200)
 
-    def post(self): 
+    def post(self):  
         threshold = 0.67
         img_stream = request.files.get("query-img")
         _, query_img_path = fe.save_query_image(img_stream)
@@ -46,8 +44,8 @@ class HomeResource(Resource):
         
         context = {
             "input_faces": [],
-            "similarity_info": []
-        }  
+            "similarity_info": [] 
+        }   
         #handle input img w/multiple faces
         if len(query_face_paths) > 1:
             query_faces_names = [Path(face_path).name for face_path in query_face_paths]
@@ -59,7 +57,7 @@ class HomeResource(Resource):
             embeddings_handler.mark_as_processed(query_feature, query_img_path_str, query_face_paths)
             context["similarity_info"] = results
 
-        return make_response(render_template("main.html", **context), 200) 
+        return make_response(render_template("main.html", **context), 200)  
 
     def _get_similar_faces(self, query_feature: np.ndarray, threshold: float):
         # if not all_face_embeddings:
@@ -71,6 +69,13 @@ class HomeResource(Resource):
             for i in ids
             if dists[i] >= threshold
         ]
+        
+class MultipleInputFacesResource(Resource):
+    def get(self):
+        return make_response(render_template("main.html"), 200)
+    def post(self):
+        pass
     
 api = Api(app)
 api.add_resource(HomeResource, "/", endpoint="index") 
+api.add_resource(MultipleInputFacesResource, "/multiple-faces", endpoint="multiple-faces")
