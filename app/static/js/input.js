@@ -92,7 +92,6 @@ const custom_form_submit_handler = async (ev) => {
       if (new_form) {
         new_form.addEventListener("submit", bindMultipleFacesSubmit);
       }
-
     } else {
       current_multiple_faces_container.style.display = "none";
     }
@@ -104,6 +103,15 @@ const custom_form_submit_handler = async (ev) => {
 const bindMultipleFacesSubmit = async (ev) => {
   ev.preventDefault();
   const form = ev.target;
+
+  //check if none of the extracted faces were selected for submission
+  const selected = form.querySelectorAll(
+    'input[name="selected_faces"]:checked'
+  );
+  if (selected.length === 0) {
+    alert("Please select at least one face before submitting.");
+    return;
+  }
 
   const form_data = new FormData(form);
 
