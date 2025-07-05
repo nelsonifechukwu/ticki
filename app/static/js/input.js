@@ -40,8 +40,8 @@ const custom_form_submit_handler = async (ev) => {
     void required_content.offsetWidth; // force reflow
     required_content.classList.add("is-required");
     required_content.style.display = "block";
+    alert("Input image is required");
 
-    console.warn("Input image is required");
     return;
   }
 
