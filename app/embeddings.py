@@ -1,6 +1,6 @@
 import threading
 import h5py
-from typing import Tuple, List, Union
+from typing import Tuple, List
 import numpy as np
 from pathlib import Path
 from .tasks import database, store_in_redis
