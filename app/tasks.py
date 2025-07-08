@@ -2,6 +2,7 @@ from .cbir import ImageProcessor, logger
 from typing import List
 from pathlib import Path
 from .celery import *
+from .constants import allowed_exts
 
 database = Path("app/static/database")
 fe = ImageProcessor(database)
@@ -41,7 +42,6 @@ def convert_faces_to_embeddings(face_path: str):
 
 @celery_app.task
 def convert_all_faces_to_embeddings(reprocess=False):
-    allowed_exts = ("jpg", "png", "jpeg")
     faces_repo = fe.extracted_faces_path
     faces_repo_list = [str(img) for img in faces_repo.iterdir() if str(img).lower().endswith(allowed_exts)]
 
@@ -59,7 +59,6 @@ def convert_all_faces_to_embeddings(reprocess=False):
     group(tasks).apply_async()
 
 def extract_all_faces(reprocess=False):
-    allowed_exts = ("jpg", "png", "jpeg")
     img_data = fe.img_data
     img_data_list = [str(img) for img in img_data.iterdir() if str(img).lower().endswith(allowed_exts)]
 

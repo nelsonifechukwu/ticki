@@ -1,0 +1,1 @@
+allowed_exts = ("jpg", "png", "jpeg")
