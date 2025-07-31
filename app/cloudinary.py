@@ -6,18 +6,26 @@ import sys
 import json
 import hmac
 import hashlib
+import logging
 from datetime import datetime
 import cloudinary
 
-# Append the config directory
+# Setup paths
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config import Config
 
-# Initialize Flask and Flask-RESTful
+# Flask app and API
 app = Flask(__name__)
 api = Api(app)
 
-# Cloudinary configuration
+# Logging config
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# Cloudinary config
 cloudinary.config(
     cloud_name=Config.CLOUDINARY_CLOUD_NAME,
     api_key=Config.CLOUDINARY_API_KEY,
@@ -28,10 +36,10 @@ def verify_upload_signature(body: str, timestamp: str, signature: str) -> bool:
     """Manual SHA1 verification for upload notifications following Cloudinary spec"""
     try:
         signed_payload = body + timestamp + Config.CLOUDINARY_API_SECRET
-        expected_signature = hashlib.sha1(signed_payload.encode('utf-8')).hexdigest()
+        expected_signature = hashlib.sha1(signed_payload.encode("utf-8")).hexdigest()
         return hmac.compare_digest(expected_signature, signature)
     except Exception as e:
-        print(f"Manual upload verification error: {e}")
+        logger.error(f"Signature verification error: {e}")
         return False
 
 def download_img(payload: dict):
@@ -46,40 +54,39 @@ def download_img(payload: dict):
             filepath = os.path.join(".", f"{original_filename}.{extension}")
             with open(filepath, "wb") as f:
                 f.write(response.content)
-            print(f"✅ Downloaded file to: {filepath}")
+            logger.info(f"Downloaded file to: {filepath}")
         except Exception as e:
-            print(f"❌ Failed to download image from Cloudinary: {e}")
+            logger.error(f"Failed to download image: {e}")
     else:
-        print("❌ No secure_url found in webhook payload.")
+        logger.warning("No secure_url in webhook payload.")
 
 class CloudinaryWebhook(Resource):
     def post(self):
-        # Extract signature and timestamp from headers
         signature = request.headers.get("X-Cld-Signature")
         timestamp = request.headers.get("X-Cld-Timestamp")
 
         if not signature or not timestamp:
+            logger.warning("Missing signature or timestamp headers.")
             return {"error": "Missing signature or timestamp headers"}, 400
 
-        # Get raw body and parsed JSON
         raw_body = request.get_data(as_text=True)
+
         try:
             payload = json.loads(raw_body)
         except json.JSONDecodeError:
+            logger.error("Invalid JSON body.")
             return {"error": "Invalid JSON body"}, 400
 
-        # Ignore non-upload notifications
         if payload.get("notification_type") != "upload":
+            logger.info("Ignored non-upload notification.")
             return {"status": "ignored"}, 200
 
-        # Verify signature
         if not verify_upload_signature(raw_body, timestamp, signature):
+            logger.warning("Invalid webhook signature.")
             return {"error": "Invalid signature"}, 403
 
-        # Download image
+        logger.info("✅ Verified Cloudinary Webhook.")
         download_img(payload)
-
-        print("✅ Verified Cloudinary Webhook:", payload)
         return {"status": "received"}, 200
 
 class CloudinaryUpload(Resource):
@@ -87,16 +94,19 @@ class CloudinaryUpload(Resource):
         try:
             file_path = request.json.get("file_path")
             if not file_path or not os.path.exists(file_path):
+                logger.warning("Invalid or missing file_path.")
                 return {"error": "Invalid or missing file_path"}, 400
 
             response = cloudinary.uploader.upload(file_path)
+            logger.info(f"Uploaded: {response['secure_url']}")
             return {"uploaded": response}, 200
         except Exception as e:
+            logger.error(f"Upload error: {e}")
             return {"error": str(e)}, 500
 
-# Register resources
+# Register endpoints
 api.add_resource(CloudinaryWebhook, "/cloudinary-webhook")
 api.add_resource(CloudinaryUpload, "/upload")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
