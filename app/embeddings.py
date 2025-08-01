@@ -1,10 +1,10 @@
-import threading
 import h5py
-from typing import Tuple, List
+import threading
 import numpy as np
 from pathlib import Path
-from .tasks import database, store_in_redis
+from typing import Tuple, List
 from .cbir import logger
+from .tasks import database, store_in_redis
 
 class EmbeddingsStore:
     def __init__(self, database):

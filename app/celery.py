@@ -1,5 +1,5 @@
-from celery import Celery, group, chord
 import redis
+from celery import Celery, group, chord
 
 celery_app = Celery('app', broker='redis://localhost:6379/0', include=['app.tasks'], backend='redis://localhost:6379/0')
 redis_client = redis.Redis(host='localhost', port=6379, db=1) 	

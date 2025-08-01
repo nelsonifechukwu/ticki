@@ -1,15 +1,13 @@
+import sys
+sys.path.append("./")
+import ast
+import numpy as np 
 from app import app
-import numpy as np  
+from typing import List
+from pathlib import Path
 from scipy.spatial import distance
 from flask import request, render_template, make_response
 from flask_restful import Resource, Api
-       
-import sys
-sys.path.append("./")
-from pathlib import Path
-import ast
-from typing import List
-
 from .tasks import fe 
 from .embeddings import embeddings_handler
 

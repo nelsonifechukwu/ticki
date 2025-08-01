@@ -1,29 +1,24 @@
-
-from PIL import Image
-import warnings
 import os
 import shutil
+import logging
+import coloredlogs
+import numpy as np
+from PIL import Image
 from typing import Tuple
-
+from pathlib import Path
+from deepface import DeepFace
+from retinaface import RetinaFace
+from deepface.basemodels import VGGFace
+from werkzeug.datastructures import FileStorage
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
 from tensorflow.keras.models import Model
-import numpy as np
 
-from pathlib import Path
-from deepface import DeepFace
-from deepface.basemodels import VGGFace
-from retinaface import RetinaFace
-
-from werkzeug.datastructures import FileStorage
-
-import logging
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s: %(levelname)s] %(message)s',
 )
 logger = logging.getLogger(__name__)
-import coloredlogs
 coloredlogs.install(level='INFO', logger=logger)
 
 #--------Tweakable GPU options-------#
