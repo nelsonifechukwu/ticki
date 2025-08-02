@@ -1,9 +1,9 @@
 from typing import List
 from pathlib import Path
 from .celery import *
-from .constants import allowed_exts
 from .cbir import ImageProcessor, logger
 
+allowed_exts = ("jpg", "png", "jpeg")
 database = Path("app/static/database")
 fe = ImageProcessor(database)
 
