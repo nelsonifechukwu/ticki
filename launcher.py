@@ -1,9 +1,9 @@
 
-import subprocess
 import sys
 import time
-
+import subprocess
 from app.cbir import logger
+
 def run_process(command):
     return subprocess.Popen(command, shell=True)
 
