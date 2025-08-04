@@ -73,11 +73,11 @@ const custom_form_submit_handler = async (ev) => {
     const current_multiple_faces_container = document.querySelector(
       ".multiple-faces-container"
     );
-    const new_all_faces = parsed_doc
+    const new_multiple_input_faces = parsed_doc
       .querySelector(".multiple-faces-container .multiple-faces")
       ?.querySelectorAll(".selectable-face");
 
-    if (new_all_faces.length > 0) {
+    if (new_multiple_input_faces.length > 0) {
       const new_multiple_faces_container = parsed_doc.querySelector(
         ".multiple-faces-container"
       );
@@ -86,11 +86,11 @@ const custom_form_submit_handler = async (ev) => {
       current_multiple_faces_container.style.display = "block";
 
       //re-bind the event listener to the replaced form
-      const new_form = current_multiple_faces_container.querySelector(
+      const multiple_faces_form = current_multiple_faces_container.querySelector(
         "#multiple-faces-form"
       );
-      if (new_form) {
-        new_form.addEventListener("submit", bindMultipleFacesSubmit);
+      if (multiple_faces_form) {
+        multiple_faces_form.addEventListener("submit", bindMultipleFacesSubmit);
       }
     } else {
       current_multiple_faces_container.style.display = "none";
