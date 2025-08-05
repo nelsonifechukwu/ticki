@@ -5,7 +5,7 @@ const input_form_element = document.querySelector(".img-input-form");
 const multiple_faces_form_element = document.getElementById(
   "multiple-faces-form"
 );
-const preview_img_handler = () => {
+const input_img_preview_handler = () => {
   const file = img_input.files[0];
   if (!file) return;
 
@@ -144,7 +144,7 @@ const bindMultipleFacesSubmit = async (ev) => {
   }
 };
 
-img_input.addEventListener("change", preview_img_handler);
+img_input.addEventListener("change", input_img_preview_handler);
 input_form_element.addEventListener("submit", custom_form_submit_handler);
 document.addEventListener("DOMContentLoaded", () => {
   const multiple_faces_form_element = document.getElementById(
