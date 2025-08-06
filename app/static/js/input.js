@@ -32,7 +32,7 @@ const custom_form_submit_handler = async (ev) => {
 
   const q_img_input = document.getElementById("q-img");
 
-  //check if there's any input img
+  //check if there's no input img
   if (!img_input.files || img_input.files.length === 0) {
     const required_content = document.querySelector(".is-required");
 
