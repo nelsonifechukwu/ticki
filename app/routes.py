@@ -9,6 +9,7 @@ from scipy.spatial import distance
 from flask import request, render_template, make_response
 from flask_restful import Resource, Api
 from .tasks import fe 
+from .cbir import logger
 from .embeddings import embeddings_handler
 
 all_face_embeddings, all_face_names = embeddings_handler.load_allfaces_embeddings(external=False)
@@ -26,7 +27,7 @@ def inject_paths():
     }  
 @app.template_filter('debug') 
 def debug_filter(value):
-    print(f"[JINJA DEBUG] face_name: {value}")
+    logger.info(f"[JINJA DEBUG] face_name: {value}")
     return ''  # Don't render anything in HTML
 class HomeResource(Resource):       
     def get(self):
