@@ -100,7 +100,7 @@ class MultipleInputFacesResource(HomeResource):
         ]#to extend the list
         
         #don't include duplicate imgs from the multiple search
-        unique_result = list({name: (sim, name) for sim, name in results}.values())
+        unique_result = list({name: (similarity, name) for similarity, name in results}.values())
         
         context["similarity_info"] = unique_result
         return make_response(render_template("main.html", **context), 200)   
