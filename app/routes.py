@@ -97,9 +97,9 @@ class MultipleInputFacesResource(HomeResource):
             match
             for face_feature in features
             for match in self._get_similar_faces(face_feature, threshold)
-        ]#to extend the list
+        ]
         
-        #don't include duplicate imgs from the multiple search
+        #remove duplicate imgs present from multiple img comparison
         unique_result = list({name: (similarity, name) for similarity, name in results}.values())
         
         context["similarity_info"] = unique_result
