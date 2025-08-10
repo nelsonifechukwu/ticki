@@ -7,8 +7,8 @@ import logging
 import requests
 import cloudinary
 from datetime import datetime
-from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
+from flask import Flask, request, jsonify
 
 # Setup paths
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

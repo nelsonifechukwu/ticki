@@ -10,9 +10,10 @@ from deepface import DeepFace
 from retinaface import RetinaFace
 from deepface.basemodels import VGGFace
 from werkzeug.datastructures import FileStorage
+from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
-from tensorflow.keras.models import Model
+
 
 logging.basicConfig(
     level=logging.INFO,
