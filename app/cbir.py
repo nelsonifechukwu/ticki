@@ -97,7 +97,7 @@ class ImageProcessor:
                     img.save(face_filepath)
                     faces_path.append(str(face_filepath))
                 else:
-                    print (f"Some faces in {img_path.name} couldn't be extracted")
+                    logger.info(f"Some faces in {img_path.name} couldn't be extracted")
             return str(faces_path)
         except Exception as e:
             logger.error(f"Error processing {img_path.name}: {str(e)}")
