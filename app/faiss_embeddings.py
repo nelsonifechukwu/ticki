@@ -15,8 +15,6 @@ def _l2_normalize(v: np.ndarray) -> np.ndarray:
     if n == 0:
         return v
     return (v / n).astype(np.float32)
-
-
 class FaissEmbeddingsStore:
     def __init__(self, database):
         self.database = database
@@ -34,7 +32,7 @@ class FaissEmbeddingsStore:
         
         self.load_all_embeddings_in_faiss()
         # Load existing index if available
-        self._load_index_in_mem()
+        #self._load_index_in_mem()
 
     def _load_index_in_mem(self):
         """Load existing FAISS index and names if available."""
@@ -165,9 +163,8 @@ class FaissEmbeddingsStore:
                 return np.empty((0, 512), dtype=np.float32), []
 
             features = np.array(features, dtype=object).astype(np.float32)
-            
-            with self._lock:
-                self._write(features, img_names)  # persists + rebuilds FAISS
+
+            self._write(features, img_names)  # persists + rebuilds FAISS
             logger.info(f"Loaded {len(img_names)} embeddings into FAISS index.")
 
         if sync_mode:
