@@ -29,10 +29,7 @@ class FaissEmbeddingsStore:
         self.index = None
         self.img_names = []
         self.dim = None
-        
-        self.load_all_embeddings_in_faiss()
-        # Load existing index if available
-        #self._load_index_in_mem()
+
 
     def _load_index_in_mem(self):
         """Load existing FAISS index and names if available."""
@@ -163,7 +160,7 @@ class FaissEmbeddingsStore:
                 return np.empty((0, 512), dtype=np.float32), []
 
             features = np.array(features, dtype=object).astype(np.float32)
-
+            
             self._write(features, img_names)  # persists + rebuilds FAISS
             logger.info(f"Loaded {len(img_names)} embeddings into FAISS index.")
 
