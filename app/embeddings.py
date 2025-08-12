@@ -176,17 +176,30 @@ class FaissEmbeddingsStore:
             query_feature = FaissEmbeddingsStore._l2_normalize(query_feature)
             
             # Use range_search for threshold-based search
-            lims, similarities, indices = self.index.range_search(query_feature, threshold)
+            # lims, similarities, indices = self.index.range_search(query_feature, threshold)
             
             results = []
             
-            # Process all queries (automatically handles single or multiple)
+            # # Process all queries (automatically handles single or multiple)
+            # for i in range(query_feature.shape[0]):
+            #     start, end = lims[i], lims[i + 1]
+            #     for sim, idx in zip(similarities[start:end], indices[start:end]):
+            #         if idx < len(self.img_names):
+            #             results.append((float(sim), self.img_names[int(idx)]))
+            
+            #  Process queries one by one to avoid memory explosion
             for i in range(query_feature.shape[0]):
-                start, end = lims[i], lims[i + 1]
+                single_query = query_feature[i:i+1]  # Shape: (1, dim)
+                
+                # Use range_search for single query only
+                lims, similarities, indices = self.index.range_search(single_query, threshold)
+                
+                # Process results for this single query
+                start, end = lims[0], lims[1]
                 for sim, idx in zip(similarities[start:end], indices[start:end]):
                     if idx < len(self.img_names):
                         results.append((float(sim), self.img_names[int(idx)]))
-            
+                    
             # Sort by similarity (descending)
             results.sort(key=lambda x: x[0], reverse=True)
             return results
