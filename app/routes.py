@@ -6,13 +6,11 @@ from app import app
 from typing import List
 from pathlib import Path
 from scipy.spatial import distance
-from flask_restful import Resource, Api
 from flask import request, render_template, make_response
+from flask_restful import Resource, Api
 from .tasks import fe 
 from .cbir import logger
-from .embeddings import embeddings_handler
-
-all_face_embeddings, all_face_names = embeddings_handler.load_allfaces_embeddings(external=False)
+from .faiss_embeddings import embeddings_handler
 
 @app.context_processor 
 def inject_paths():
@@ -54,21 +52,14 @@ class HomeResource(Resource):
             query_face_path = Path(query_face_paths[0])
             query_feature = fe.extract_features(query_face_path).astype(float)
             results = self._get_similar_faces(query_feature, threshold)
-            embeddings_handler.mark_as_processed(query_feature, query_img_path_str, query_face_paths)
+            #embeddings_handler.mark_as_processed(query_feature, query_img_path_str, query_face_paths)
             context["similarity_info"] = results
 
         return make_response(render_template("main.html", **context), 200)    
 
     def _get_similar_faces(self, query_feature: np.ndarray, threshold: float):
-        dists = [1 - distance.cosine(x, query_feature) for x in all_face_embeddings]
-
-        # Filter indices with distance >= threshold
-        filtered_ids = [i for i, d in enumerate(dists) if d >= threshold]
-
-        # Sort the filtered indices by descending distance
-        ids = sorted(filtered_ids, key=lambda i: dists[i], reverse=True)
-
-        return [(dists[i], all_face_names[i]) for i in ids]
+        """Get similar faces using FAISS for fast similarity search."""
+        return embeddings_handler.get_similar_faces(query_feature, threshold)
         
 class MultipleInputFacesResource(HomeResource):
     def get(self):
@@ -98,7 +89,7 @@ class MultipleInputFacesResource(HomeResource):
             for face_feature in features
             for match in self._get_similar_faces(face_feature, threshold)
         ]
-        
+         
         #remove duplicate imgs present from multiple img comparison
         unique_result = list({name: (similarity, name) for similarity, name in results}.values())
         
