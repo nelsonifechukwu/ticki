@@ -156,13 +156,12 @@ class FaissEmbeddingsStore:
             logger.info(f"Written {len(img_names)} embeddings to FAISS index")
 
     @staticmethod
-    def _l2_normalize(v: np.ndarray) -> np.ndarray:
+    def _l2_normalize(query_feature: np.ndarray) -> np.ndarray:
         """Normalize vector to unit length for cosine similarity."""
-        v = v.astype(np.float32, copy=False)
-        n = np.linalg.norm(v)
-        if n == 0:
-            return v
-        return (v / n).astype(np.float32)
+        norms = np.linalg.norm(query_feature, axis=1, keepdims=True)
+        norms = np.maximum(norms, 1e-12)  # Avoid division by zero
+        query_feature = query_feature / norms
+        return query_feature
 
     def get_similar_faces(self, query_feature: np.ndarray, threshold: float) -> List[Tuple[float, str]]:
         """Get similar faces using FAISS for fast similarity search."""
@@ -170,33 +169,32 @@ class FaissEmbeddingsStore:
         if self.index is None or self.index.ntotal == 0:
             logger.info("Index empty, loading embeddings from files...")
             self.load_all_embeddings_in_faiss()
-            
-        # Normalize query feature for cosine similarity
-        query_feature = FaissEmbeddingsStore._l2_normalize(np.array(query_feature, dtype=np.float32).reshape(1, -1))
         
-        # Use range_search for threshold-based search
-            
         try:
+            # CRITICAL: Ensure 2D array and proper dtype
+            query_feature = np.atleast_2d(np.array(query_feature, dtype=np.float32))
+            query_feature = FaissEmbeddingsStore._l2_normalize(query_feature)
+            
+            # Use range_search for threshold-based search
             lims, similarities, indices = self.index.range_search(query_feature, threshold)
             
-            results=[]
+            results = []
             
-            num_queries = query_feature.shape[0]
-            loop_range = 1 if num_queries == 1 else num_queries
-
-            # Process all queries (single or multiple)
-            for i in range(loop_range):
+            # Process all queries (automatically handles single or multiple)
+            for i in range(query_feature.shape[0]):
                 start, end = lims[i], lims[i + 1]
                 for sim, idx in zip(similarities[start:end], indices[start:end]):
                     if idx < len(self.img_names):
                         results.append((float(sim), self.img_names[int(idx)]))
-
+            
             # Sort by similarity (descending)
             results.sort(key=lambda x: x[0], reverse=True)
             return results
-        
+            
         except Exception as e:
             logger.error(f"Error in FAISS range search: {e}")
+            logger.error(f"Query feature shape: {query_feature.shape if 'query_feature' in locals() else 'undefined'}")
+            logger.error(f"Query feature type: {type(query_feature) if 'query_feature' in locals() else 'undefined'}")
             return []
 
     def search_topk(self, query_feature: np.ndarray, k: int = 50) -> List[Tuple[float, str]]:
