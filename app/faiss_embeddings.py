@@ -54,20 +54,19 @@ class FaissEmbeddingsStore:
                 pickle.dump(self.img_names, f)
 
     def _check_store_in_mem(self):
-        """Check if FAISS store is available."""
-        if self.index is None or self.index.ntotal == 0 or len(self.img_names)==0:
-            logger.warning("Embedding store isn't loaded in memory")
-            logger.info("Loading embedding store in memory")
-            try: 
-                self._load_index_in_mem()
-            except:
-                raise
+        """Ensure FAISS index and names are loaded in memory."""
+        if not self.index or self.index.ntotal == 0 or not self.img_names:
+            logger.warning("Embedding store not loaded; loading now...")
+            self._load_index_in_mem()
+        else:
+            logger.info("Embedding store already loaded in memory.")
 
     def _read(self) -> Tuple[np.ndarray, List[str]]:
         """Read embeddings from FAISS index."""
         self._check_store_in_mem()
+        logger.info("Reading in progress...")
         features = np.zeros((self.index.ntotal, self.index.d), dtype=np.float32)
-        self.index.reconstruct_n(0, self.index.ntotal, features)        
+        self.index.reconstruct_n(0, self.index.ntotal, features)
         return features, self.img_names.copy()
 
     def _write(self, features: np.ndarray, img_names: List[str]):
