@@ -66,15 +66,17 @@ class MultipleInputFacesResource(HomeResource):
         return make_response(render_template("main.html"), 200)
     
     def post(self):
-        context = { 
+        
+        context = {   
             "input_faces": [],
             "similarity_info": [] 
         }  
         threshold = 0.67
         selected_faces = request.form.getlist("selected_faces")
+
         if not selected_faces:
             return make_response(render_template("main.html", **context), 200)
-
+        
         features: List[np.ndarray] = []
         for face_name in selected_faces:
             face_path = fe.extracted_faces_path / face_name
@@ -84,17 +86,23 @@ class MultipleInputFacesResource(HomeResource):
         if not features:
             return make_response(render_template("main.html", **context), 200) 
         
-        results = [
-            match
-            for face_feature in features
-            for match in self._get_similar_faces(face_feature, threshold)
-        ]
-         
-        #remove duplicate imgs present from multiple img comparison
-        unique_result = list({name: (similarity, name) for similarity, name in results}.values())
+        query_features = np.vstack(features).astype(np.float32)  
+        results = self._get_similar_faces(query_features, threshold)
         
-        context["similarity_info"] = unique_result
-        return make_response(render_template("main.html", **context), 200)   
+        # FIXED: Better duplicate removal that preserves highest similarity
+        seen_names = {}
+        unique_results = []
+        
+        for similarity, name in results: 
+            if name not in seen_names or similarity > seen_names[name]:
+                seen_names[name] = similarity
+        
+        # Convert back to list of tuples, sorted by similarity
+        unique_results = [(sim, name) for name, sim in seen_names.items()]
+        unique_results.sort(key=lambda x: x[0], reverse=True)
+
+        context["similarity_info"] = unique_results
+        return make_response(render_template("main.html", **context), 200)  
     
 api = Api(app)
 api.add_resource(HomeResource, "/", endpoint="index") 
