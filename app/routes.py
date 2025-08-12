@@ -10,7 +10,7 @@ from flask import request, render_template, make_response
 from flask_restful import Resource, Api
 from .tasks import fe 
 from .cbir import logger
-from .faiss_embeddings import embeddings_handler
+from .embeddings import embeddings_handler
 
 @app.context_processor 
 def inject_paths():
