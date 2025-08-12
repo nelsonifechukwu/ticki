@@ -159,7 +159,6 @@ class FaissEmbeddingsStore:
         else:
             raise ValueError(f"Unsupported index type: {self.index_type}")
 
-
     def _write(self, features: np.ndarray, img_names: List[str]):
         """Write embeddings to FAISS index."""
         with self._lock:
@@ -212,7 +211,7 @@ class FaissEmbeddingsStore:
             self.load_all_embeddings_in_faiss()
         
         try:
-            # CRITICAL: Ensure 2D array and proper dtype
+            # Ensure 2D array and proper dtype
             query_feature = np.atleast_2d(np.array(query_feature, dtype=np.float32))
             query_feature = FaissEmbeddingsStore._l2_normalize(query_feature)
             
