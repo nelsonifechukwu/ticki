@@ -7,30 +7,6 @@ from app.cbir import logger
 def run_process(command):
     return subprocess.Popen(command, shell=True)
 
-def tasks_completed():
-    from app.celery import celery_app 
-
-    insp = celery_app.control.inspect()
-    scheduled = insp.scheduled()
-    active = insp.active()
-    reserved = insp.reserved()
-
-    # Check if any worker still has tasks
-    for tasks in [scheduled, active, reserved]:
-        if tasks and any(tasks.values()):
-            return False
-    return True
-
-
-def wait_until_tasks_finish(phase: str, poll_interval=2):
-    logger.info(f"📌 Waiting for Celery to complete: {phase} ...")
-    while True:
-        if tasks_completed():
-            logger.info(f"✅ {phase} completed.")
-            break
-        logger.info(f"⏳ {phase} in progress...")
-        time.sleep(poll_interval)
-
 if __name__ == "__main__":
     try:
         logger.info("Starting Redis server...")
@@ -53,13 +29,6 @@ if __name__ == "__main__":
         if reprocess:
             redis_client.flushdb()
         main(reprocess) 
-        # logger.info("🚀 Starting face extraction...")
-        # extract_all_faces(reprocess)
-        # wait_until_tasks_finish("Face Extraction")
-
-        # logger.info("🚀 Starting feature embedding...")
-        # convert_all_faces_to_embeddings(reprocess)
-        # wait_until_tasks_finish("Face Embedding")
 
         logger.info("Celery & Flask are still running... Press CTRL+C to exit.")
         flask.wait()
