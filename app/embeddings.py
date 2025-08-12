@@ -4,7 +4,7 @@ import threading
 import numpy as np
 import pickle
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Literal
 from .cbir import logger
 from .tasks import database, store_in_redis
 
@@ -84,10 +84,16 @@ class EmbeddingsStore:
         thread.start() 
 
 class FaissEmbeddingsStore:
-    def __init__(self, database):
+    def __init__(self, database, index_type: Literal["flat", "ivf"] = "flat"):
         self.database = database
-        self._faiss_store = self.database / "faiss_index.bin"
-        self._names_store = self.database / "faiss_names.pkl"
+        self.index_type = index_type
+        
+        if index_type=="flat":
+            self._faiss_store = self.database / "faiss_index.bin"
+            self._names_store = self.database / "faiss_names.pkl"
+        elif index_type=="ivf":
+            self._faiss_store = self.database / "ivf_faiss_index.bin"
+            self._names_store = self.database / "ivf_faiss_names.pkl"
         
         # Paths initialized via ImageProcessor
         self.img_data = self.database / "img_repo" / "img_data"
@@ -98,6 +104,7 @@ class FaissEmbeddingsStore:
         self.img_names = []
         self.dim = None
 
+        logger.info(f"Initialized FAISS store with {self.index_type.upper()} index type")
 
     def _load_index_in_mem(self):
         """Load existing FAISS index and names if available."""
@@ -108,7 +115,7 @@ class FaissEmbeddingsStore:
             self.dim = self.index.d
             with open(self._names_store, "rb") as f:
                 self.img_names = pickle.load(f)
-            logger.info(f"Loaded FAISS index with {self.index.ntotal} embeddings")
+            logger.info(f"Loaded FAISS {self.index_type.upper()} index with {self.index.ntotal} embeddings")
         except Exception as e:
             logger.error(f"Error loading FAISS index: {e}")
             self.index = None
@@ -136,6 +143,22 @@ class FaissEmbeddingsStore:
         features = np.zeros((self.index.ntotal, self.index.d), dtype=np.float32)
         self.index.reconstruct_n(0, self.index.ntotal, features)
         return features, self.img_names.copy()
+    
+    def _create_index(self, dim: int, num_vectors: int) -> faiss.Index:
+        """Create appropriate FAISS index based on index_type."""
+        if self.index_type == "flat":
+            logger.info(f"Creating IndexFlatIP with dimension {dim}")
+            return faiss.IndexFlatIP(dim)
+        
+        elif self.index_type == "ivf":
+            # Adaptive nlist based on data size
+            nlist = min(100, max(1, num_vectors // 10))
+            logger.info(f"Creating IndexIVFFlat with dimension {dim} and {nlist} clusters")
+            quantizer = faiss.IndexFlatIP(dim)
+            return faiss.IndexIVFFlat(quantizer, dim, nlist)
+        else:
+            raise ValueError(f"Unsupported index type: {self.index_type}")
+
 
     def _write(self, features: np.ndarray, img_names: List[str]):
         """Write embeddings to FAISS index."""
@@ -148,12 +171,30 @@ class FaissEmbeddingsStore:
             features = features / norms
 
             self.dim = features.shape[1]
-            # Use IndexFlatIP for cosine similarity on normalized vectors
-            self.index = faiss.IndexFlatIP(self.dim)
+            num_vectors = features.shape[0]
+            
+            self.index = self._create_index(self.dim, num_vectors)
+            # Train index if needed (IVF requires training)
+            if self.index_type == "ivf":
+                nlist = self.index.nlist
+                if num_vectors >= nlist:
+                    logger.info(f"Training IVF index with {num_vectors} vectors and {nlist} clusters...")
+                    self.index.train(features)
+                    logger.info("Training complete.")
+                else:
+                    logger.warning(f"Not enough vectors ({num_vectors}) to train {nlist} clusters. Using minimum clusters.")
+                    nlist = max(1, num_vectors)
+                    quantizer = faiss.IndexFlatIP(self.dim)
+                    self.index = faiss.IndexIVFFlat(quantizer, self.dim, nlist)
+                    self.index.train(features)
+            
+            # Add vectors to index
             self.index.add(features)
             self.img_names = img_names.copy()
             self._save_index()
-            logger.info(f"Written {len(img_names)} embeddings to FAISS index")
+            
+            index_info = f"with {self.index.nlist} clusters" if self.index_type == "ivf" else ""
+            logger.info(f"Written {len(img_names)} embeddings to FAISS {self.index_type.upper()} index {index_info}")
 
     @staticmethod
     def _l2_normalize(query_feature: np.ndarray) -> np.ndarray:
@@ -188,17 +229,25 @@ class FaissEmbeddingsStore:
             #             results.append((float(sim), self.img_names[int(idx)]))
             
             #  Process queries one by one to avoid memory explosion
+            
             for i in range(query_feature.shape[0]):
                 single_query = query_feature[i:i+1]  # Shape: (1, dim)
                 
-                # Use range_search for single query only
-                lims, similarities, indices = self.index.range_search(single_query, threshold)
+                if self.index_type == "flat":
+                    # Use range_search for exact threshold matching (FLAT only)
+                    lims, similarities, indices = self.index.range_search(single_query, threshold)
+                    start, end = lims[0], lims[1]
+                    for sim, idx in zip(similarities[start:end], indices[start:end]):
+                        if idx < len(self.img_names):
+                            results.append((float(sim), self.img_names[int(idx)]))
                 
-                # Process results for this single query
-                start, end = lims[0], lims[1]
-                for sim, idx in zip(similarities[start:end], indices[start:end]):
-                    if idx < len(self.img_names):
-                        results.append((float(sim), self.img_names[int(idx)]))
+                elif self.index_type == "ivf":
+                    # Use top-k search then filter by threshold (IVF)
+                    k = min(1000, self.index.ntotal)  # Search more candidates since it's approximate
+                    similarities, indices = self.index.search(single_query, k)
+                    for sim, idx in zip(similarities[0], indices[0]):
+                        if idx != -1 and idx < len(self.img_names) and sim >= threshold:
+                            results.append((float(sim), self.img_names[int(idx)]))
                     
             # Sort by similarity (descending)
             results.sort(key=lambda x: x[0], reverse=True)
@@ -307,5 +356,5 @@ class FaissEmbeddingsStore:
         else:
             _worker()
 # Global instance
-embeddings_handler = FaissEmbeddingsStore(database)
-embeddings_handler.load_all_embeddings_in_faiss(external=True)
+embeddings_handler = FaissEmbeddingsStore(database=database,index_type="ivf")
+embeddings_handler.load_all_embeddings_in_faiss()
