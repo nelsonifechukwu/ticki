@@ -175,21 +175,26 @@ class FaissEmbeddingsStore:
         query_feature = FaissEmbeddingsStore._l2_normalize(np.array(query_feature, dtype=np.float32).reshape(1, -1))
         
         # Use range_search for threshold-based search
+            
         try:
             lims, similarities, indices = self.index.range_search(query_feature, threshold)
             
-            # Extract results for single query
-            start, end = lims[0], lims[1]
-            results = []
+            results=[]
             
-            for sim, idx in zip(similarities[start:end], indices[start:end]):
-                if idx < len(self.img_names):
-                    results.append((float(sim), self.img_names[int(idx)]))
-            
+            num_queries = query_feature.shape[0]
+            loop_range = 1 if num_queries == 1 else num_queries
+
+            # Process all queries (single or multiple)
+            for i in range(loop_range):
+                start, end = lims[i], lims[i + 1]
+                for sim, idx in zip(similarities[start:end], indices[start:end]):
+                    if idx < len(self.img_names):
+                        results.append((float(sim), self.img_names[int(idx)]))
+
             # Sort by similarity (descending)
             results.sort(key=lambda x: x[0], reverse=True)
             return results
-            
+        
         except Exception as e:
             logger.error(f"Error in FAISS range search: {e}")
             return []
@@ -292,4 +297,4 @@ class FaissEmbeddingsStore:
             _worker()
 # Global instance
 embeddings_handler = FaissEmbeddingsStore(database)
-embeddings_handler.load_all_embeddings_in_faiss()
+embeddings_handler.load_all_embeddings_in_faiss(external=True)
