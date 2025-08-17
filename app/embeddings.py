@@ -203,7 +203,7 @@ class FaissEmbeddingsStore:
         query_feature = query_feature / norms
         return query_feature
 
-    def get_similar_faces(self, query_feature: np.ndarray, threshold: float) -> List[Tuple[float, str]]:
+    def get_similar_faces(self, query_feature: np.ndarray, threshold: float=0) -> List[Tuple[float, str]]:
         """Get similar faces using FAISS for fast similarity search."""
         # Auto-load embeddings if index is empty
         if self.index is None or self.index.ntotal == 0:
@@ -355,5 +355,5 @@ class FaissEmbeddingsStore:
         else:
             _worker()
 # Global instance
-embeddings_handler = FaissEmbeddingsStore(database=database,index_type="ivf")
+embeddings_handler = FaissEmbeddingsStore(database=database,index_type="flat")
 embeddings_handler.load_all_embeddings_in_faiss()
