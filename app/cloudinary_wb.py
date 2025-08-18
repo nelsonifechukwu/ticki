@@ -9,6 +9,10 @@ import cloudinary
 from datetime import datetime
 from flask_restful import Resource, Api
 from flask import Flask, request, jsonify
+from .embeddings import embeddings_handler
+from .tasks import fe
+import ast
+from pathlib import Path
 
 # Setup paths
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -55,12 +59,46 @@ def download_img(payload: dict):
             with open(filepath, "wb") as f:
                 f.write(response.content)
             logger.info(f"Downloaded file to: {filepath}")
+            return filepath
         except Exception as e:
             logger.error(f"Failed to download image: {e}")
     else:
         logger.warning("No secure_url in webhook payload.")
 
+def compare_and_return(img_path):
+    
+    try: 
+        query_face_paths_str = fe.extract_faces(img_path)
+        query_face_paths = ast.literal_eval(query_face_paths_str)
+
+        #handle input img w/multiple faces
+        if not query_face_paths:
+            logger.warning("No face found in uploaded image.")
+            return jsonify({"error": "No face detected in input image"}), 400
+
+        if len(query_face_paths) > 1:
+            logger.warning("Multiple faces found in uploaded image.")
+            return jsonify({"error": "Input image should contain only one face"}), 400
+
+        query_face_path = Path(query_face_paths[0])
+        query_feature = fe.extract_features(query_face_path).astype(float)
+        results = embeddings_handler.get_similar_faces(query_feature)
+        
+        return jsonify({
+        "status": "success",
+        "matches": [
+            {"score": round(score, 4), "img_name": img_name}
+            for score, img_name in results
+        ]
+        }), 200
+    
+    except Exception as e:
+        logger.error(f"Error comparing face: {e}")
+        return jsonify({"error": "Internal Server Error"}), 500
+    
+        
 class CloudinaryWebhook(Resource):
+    
     def post(self):
         signature = request.headers.get("X-Cld-Signature")
         timestamp = request.headers.get("X-Cld-Timestamp")
@@ -86,8 +124,12 @@ class CloudinaryWebhook(Resource):
             return {"error": "Invalid signature"}, 403
 
         logger.info("✅ Verified Cloudinary Webhook.")
-        download_img(payload)
-        return {"status": "received"}, 200
+        filepath = download_img(payload)  # Return this from download_img
+        if filepath:
+            return compare_and_return(Path(filepath))
+        else:
+            return {"error": "Failed to download image"}, 500
+        # return {"status": "received"}, 200
 
 class CloudinaryUpload(Resource):
     def post(self):
