@@ -55,7 +55,7 @@ def download_img(payload: dict):
         try:
             response = requests.get(secure_url)
             response.raise_for_status()
-            filepath = os.path.join(".", f"{original_filename}.{extension}")
+            filepath = os.path.join("/", f"{original_filename}.{extension}")
             with open(filepath, "wb") as f:
                 f.write(response.content)
             logger.info(f"Downloaded file to: {filepath}")
@@ -65,7 +65,7 @@ def download_img(payload: dict):
     else:
         logger.warning("No secure_url in webhook payload.")
 
-def compare_and_return(img_path):
+def compare_and_return(img_path: str):
     
     try: 
         query_face_paths_str = fe.extract_faces(img_path)
@@ -84,8 +84,10 @@ def compare_and_return(img_path):
         query_feature = fe.extract_features(query_face_path).astype(float)
         results = embeddings_handler.get_similar_faces(query_feature)
         
+        img_name = Path(img_path).name
         return jsonify({
         "status": "success",
+        "query_img": img_name,
         "matches": [
             {"score": round(score, 4), "img_name": img_name}
             for score, img_name in results
