@@ -8,7 +8,6 @@ from typing import Tuple
 from pathlib import Path
 from deepface import DeepFace
 from retinaface import RetinaFace
-from deepface.basemodels import VGGFace
 from werkzeug.datastructures import FileStorage
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing import image

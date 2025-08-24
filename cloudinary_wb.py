@@ -10,7 +10,7 @@ import cloudinary
 from pathlib import Path
 from datetime import datetime
 from flask_restful import Resource, Api
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from app.tasks import fe
 from app.embeddings import embeddings_handler
 
