@@ -9,7 +9,6 @@ from pathlib import Path
 from deepface import DeepFace
 from retinaface import RetinaFace
 from werkzeug.datastructures import FileStorage
-from tensorflow.keras.preprocessing import image
 
 logging.basicConfig(
     level=logging.INFO,
@@ -98,13 +97,15 @@ class ImageProcessor:
 
     def extract_features(self, face_path: str) -> np.ndarray:
         face_path = Path(face_path)
-        face_img= Image.open(face_path)
-        face_img = face_img.resize((224, 224)) 
-        face_img = image.img_to_array(face_img)
+        face_img = Image.open(face_path).convert("RGB").resize((224, 224))
+        arr = np.array(face_img)         # RGB, uint8, shape (224, 224, 3)
 
+        # DeepFace expects OpenCV-style BGR arrays; convert RGB -> BGR
+        bgr = arr[:, :, ::-1]
+        
         try:
             embedding_obj = DeepFace.represent(
-                img_path=face_img,
+                img_path=bgr,
                 model_name="Facenet512",
                 enforce_detection=False
             )[0]
