@@ -9,10 +9,7 @@ from pathlib import Path
 from deepface import DeepFace
 from retinaface import RetinaFace
 from werkzeug.datastructures import FileStorage
-from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,9 +27,6 @@ coloredlogs.install(level='INFO', logger=logger)
 os.environ["TF_MPS_ENABLED"] = "0"
 # tf.config.set_visible_devices([], 'GPU')
 class ImageProcessor:
-    base_model = VGG16(weights='imagenet')
-    model = Model(inputs=base_model.input, outputs=base_model.get_layer('fc1').output)
-
     def __init__(self, database:Path):
         self.database = database
         self.img_repo = self.database / "img_repo" 
