@@ -51,6 +51,7 @@ click @ file:///home/conda/feedstock_root/build_artifacts/click_1692311806742/wo
 click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
+cloudinary==1.44.1
 cloudpickle @ file:///home/conda/feedstock_root/build_artifacts/cloudpickle_1653061851209/work
 colorama @ file:///home/conda/feedstock_root/build_artifacts/colorama_1655412516417/work
 coloredlogs==15.0.1
