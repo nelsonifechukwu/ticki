@@ -5,7 +5,7 @@ import numpy as np
 from app import app
 from typing import List
 from pathlib import Path
-from scipy.spatial import distance
+#from scipy.spatial import distance
 from flask import request, render_template, make_response
 from flask_restful import Resource, Api
 from .tasks import fe 
