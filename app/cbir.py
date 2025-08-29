@@ -107,6 +107,7 @@ class ImageProcessor:
             embedding_obj = DeepFace.represent(
                 img_path=bgr,
                 model_name="Facenet512",
+                detector_backend="skip",
                 enforce_detection=False
             )[0]
 
