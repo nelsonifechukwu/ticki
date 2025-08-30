@@ -23,10 +23,7 @@ def inject_paths():
         "img_data_path": str(img_data_path) + "/",
         "extracted_faces_path": str(extracted_faces_path) + "/"
     }  
-@app.template_filter('debug') 
-def debug_filter(value):
-    logger.info(f"[JINJA DEBUG] face_name: {value}")
-    return ''  # Don't render anything in HTML
+
 class HomeResource(Resource):       
     def get(self):
         return make_response(render_template("main.html"), 200)
