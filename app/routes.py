@@ -29,7 +29,7 @@ class HomeResource(Resource):
         return make_response(render_template("main.html"), 200)
 
     def post(self):  
-        threshold = 0.67    
+        threshold = float(request.form.get('threshold', 0.67))    
         img_stream = request.files.get("query-img")
         _, query_img_path = fe.save_query_image(img_stream)
         query_img_path_str = str(query_img_path) 
@@ -68,7 +68,7 @@ class MultipleInputFacesResource(HomeResource):
             "input_faces": [],
             "similarity_info": [] 
         }  
-        threshold = 0.67
+        threshold = float(request.form.get('threshold', 0.67))
         selected_faces = request.form.getlist("selected_faces")
 
         if not selected_faces:
