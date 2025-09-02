@@ -28,4 +28,4 @@ class Config:
     CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
     CLOUDINARY_WEBHOOK_SECRET = os.environ.get('CLOUDINARY_WEBHOOK_SECRET')
     
-
+    TICKI_URL = os.environ.get("TICKI_URL")

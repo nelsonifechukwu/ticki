@@ -13,7 +13,6 @@ from flask_restful import Resource, Api
 from flask import Flask, request
 from app.tasks import fe
 from app.embeddings import embeddings_handler
-
 # Setup paths
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config import Config
@@ -97,7 +96,7 @@ def compare_and_return(img_path: str):
     
         try:
             resp = requests.post(
-                "https://ticki-api.herokuapp.com/api/user/discovery/add",
+                Config.TICKI_URL,
                 json=payload,
                 timeout=10
             )
