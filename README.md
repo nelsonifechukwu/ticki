@@ -2,6 +2,8 @@
 
 Ticki is a sophisticated content-based image retrieval (CBIR) system that allows users to search for images containing specific faces within a large repository. Built with computer vision and deep learning technologies, Ticki can process face images, extract facial features, and find similar faces across thousands of images with high accuracy.
 
+<img width="1442" height="958" alt="ticki" src="https://github.com/user-attachments/assets/a73505e4-1323-4f7f-ac59-6dba1c2b914f" />
+
 ## Features
 
 - **Face Detection & Extraction**: Automatically detects and extracts faces from uploaded images
