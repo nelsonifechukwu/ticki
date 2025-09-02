@@ -10,47 +10,49 @@ const uploadArea = document.querySelector(".upload-area");
 const thresholdSlider = document.getElementById("threshold");
 const thresholdValue = document.querySelector(".threshold-value");
 const resultsContainer = document.getElementById("results-container");
-const multipleFacesContainer = document.querySelector(".multiple-faces-container");
+const multipleFacesContainer = document.querySelector(
+  ".multiple-faces-container"
+);
 const facesGrid = document.getElementById("faces-grid");
 const multipleFacesForm = document.getElementById("multiple-faces-form");
 
 // Toast notification system
-const showToast = (message, type = 'info') => {
-  const toast = document.createElement('div');
+const showToast = (message, type = "info") => {
+  const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;
   toast.innerHTML = `
     <i class="fas ${getToastIcon(type)}"></i>
     <span>${message}</span>
   `;
-  
+
   document.body.appendChild(toast);
-  
+
   // Trigger animation
-  setTimeout(() => toast.classList.add('show'), 100);
-  
+  setTimeout(() => toast.classList.add("show"), 100);
+
   // Remove after 4 seconds
   setTimeout(() => {
-    toast.classList.remove('show');
+    toast.classList.remove("show");
     setTimeout(() => document.body.removeChild(toast), 300);
   }, 4000);
 };
 
 const getToastIcon = (type) => {
   const icons = {
-    success: 'fa-check-circle',
-    error: 'fa-exclamation-circle',
-    warning: 'fa-exclamation-triangle',
-    info: 'fa-info-circle'
+    success: "fa-check-circle",
+    error: "fa-exclamation-circle",
+    warning: "fa-exclamation-triangle",
+    info: "fa-info-circle",
   };
   return icons[type] || icons.info;
 };
 
 // Add CSS styles dynamically
 const addStyles = () => {
-  if (document.querySelector('#spa-styles')) return;
-  
-  const style = document.createElement('style');
-  style.id = 'spa-styles';
+  if (document.querySelector("#spa-styles")) return;
+
+  const style = document.createElement("style");
+  style.id = "spa-styles";
   style.textContent = `
     .toast {
       position: fixed;
@@ -133,14 +135,14 @@ const handleImagePreview = () => {
   if (!file) return;
 
   // Validate file type
-  if (!file.type.startsWith('image/')) {
-    showToast('Please select a valid image file', 'error');
+  if (!file.type.startsWith("image/")) {
+    showToast("Please select a valid image file", "error");
     return;
   }
 
   // Validate file size (10MB limit)
   if (file.size > 10 * 1024 * 1024) {
-    showToast('File size must be less than 10MB', 'error');
+    showToast("File size must be less than 10MB", "error");
     return;
   }
 
@@ -149,14 +151,14 @@ const handleImagePreview = () => {
 
   reader.onload = () => {
     // Update upload area
-    uploadArea.classList.add('has-image');
+    uploadArea.classList.add("has-image");
     uploadArea.innerHTML = `<img src="${reader.result}" alt="Preview" class="preview-image" />`;
-    
-    showToast('Image loaded successfully!', 'success');
+
+    showToast("Image loaded successfully!", "success");
   };
 
   reader.onerror = () => {
-    showToast('Error reading file. Please try again.', 'error');
+    showToast("Error reading file. Please try again.", "error");
   };
 };
 
@@ -167,14 +169,14 @@ const setupDragAndDrop = () => {
   const handleDragEnter = (e) => {
     e.preventDefault();
     dragCounter++;
-    uploadArea.classList.add('drag-over');
+    uploadArea.classList.add("drag-over");
   };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
     dragCounter--;
     if (dragCounter === 0) {
-      uploadArea.classList.remove('drag-over');
+      uploadArea.classList.remove("drag-over");
     }
   };
 
@@ -185,7 +187,7 @@ const setupDragAndDrop = () => {
   const handleDrop = (e) => {
     e.preventDefault();
     dragCounter = 0;
-    uploadArea.classList.remove('drag-over');
+    uploadArea.classList.remove("drag-over");
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
@@ -194,21 +196,21 @@ const setupDragAndDrop = () => {
     }
   };
 
-  uploadArea.addEventListener('dragenter', handleDragEnter);
-  uploadArea.addEventListener('dragleave', handleDragLeave);
-  uploadArea.addEventListener('dragover', handleDragOver);
-  uploadArea.addEventListener('drop', handleDrop);
+  uploadArea.addEventListener("dragenter", handleDragEnter);
+  uploadArea.addEventListener("dragleave", handleDragLeave);
+  uploadArea.addEventListener("dragover", handleDragOver);
+  uploadArea.addEventListener("drop", handleDrop);
 };
 
 // Loading state management
 const setLoadingState = (button, isLoading, originalText) => {
   if (isLoading) {
     button.disabled = true;
-    button.classList.add('btn-loading');
+    button.classList.add("btn-loading");
     button.innerHTML = `<span>Processing...</span>`;
   } else {
     button.disabled = false;
-    button.classList.remove('btn-loading');
+    button.classList.remove("btn-loading");
     button.innerHTML = originalText;
   }
 };
@@ -216,15 +218,20 @@ const setLoadingState = (button, isLoading, originalText) => {
 // API call helper
 const makeAPICall = async (url, formData) => {
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     body: formData,
   });
 
+  data = await response.json();
+
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const error = new Error(`HTTP error! status: ${response.status}`);
+    error.status = response.status;
+    error.body = data;
+    throw error;
   }
 
-  return await response.json();
+  return data;
 };
 
 // Format results for display
@@ -241,17 +248,23 @@ const formatResults = (results) => {
     `;
   }
 
-  return results.map(result => `
+  return results
+    .map(
+      (result) => `
     <div class="result-item">
       <img src="${result.image_url}" alt="Found image" />
       <div class="similarity-score">${result.similarity.toFixed(2)}</div>
     </div>
-  `).join('');
+  `
+    )
+    .join("");
 };
 
 // Format multiple faces selection
 const formatMultipleFaces = (faces) => {
-  return faces.map(face => `
+  return faces
+    .map(
+      (face) => `
     <label class="selectable-face">
       <input
         type="checkbox"
@@ -263,7 +276,9 @@ const formatMultipleFaces = (faces) => {
         <img src="${face.url}" alt="Detected face" />
       </div>
     </label>
-  `).join('');
+  `
+    )
+    .join("");
 };
 
 // Main form submission handler
@@ -275,7 +290,7 @@ const handleFormSubmit = async (ev) => {
 
   // Validation
   if (!imgInput.files || imgInput.files.length === 0) {
-    showToast('Please select an image first', 'warning');
+    showToast("Please select an image first", "warning");
     return;
   }
 
@@ -284,17 +299,17 @@ const handleFormSubmit = async (ev) => {
 
   try {
     const formData = new FormData();
-    formData.append('query-img', imgInput.files[0]);
-    formData.append('threshold', thresholdSlider.value);
+    formData.append("query-img", imgInput.files[0]);
+    formData.append("threshold", thresholdSlider.value);
 
-    const result = await makeAPICall('/', formData);
+    const result = await makeAPICall("/", formData);
 
-    if (result.status === 'multiple_faces') {
+    if (result.status === "multiple_faces") {
       // Handle multiple faces detected
       facesGrid.innerHTML = formatMultipleFaces(result.faces);
-      multipleFacesContainer.style.display = 'block';
-      multipleFacesContainer.classList.add('fade-in');
-      
+      multipleFacesContainer.style.display = "block";
+      multipleFacesContainer.classList.add("fade-in");
+
       // Hide results section
       resultsContainer.innerHTML = `
         <div class="no-results">
@@ -305,34 +320,28 @@ const handleFormSubmit = async (ev) => {
           <p>Please select which faces to search for above</p>
         </div>
       `;
-      
-      showToast(result.message, 'info');
-    } else if (result.status === 'success') {
-      // Handle single face success
-      multipleFacesContainer.style.display = 'none';
-      resultsContainer.innerHTML = formatResults(result.results);
-      resultsContainer.classList.add('fade-in');
-      
-      if (result.results.length > 0) {
-        showToast(`Found ${result.results.length} similar ${result.results.length === 1 ? 'image' : 'images'}!`, 'success');
-      } else {
-        showToast('No similar faces found in the repository.', 'info');
-      }
-    }
 
-  } catch (error) {
-    console.error('Search failed:', error);
-    showToast('Something went wrong. Please try again.', 'error');
-    
-    // Try to parse error response
-    try {
-      const errorData = await error.response?.json();
-      if (errorData?.error) {
-        showToast(errorData.error, 'error');
+      showToast(result.message, "info");
+    } else if (result.status === "success") {
+      // Handle single face success
+      multipleFacesContainer.style.display = "none";
+      resultsContainer.innerHTML = formatResults(result.results);
+      resultsContainer.classList.add("fade-in");
+
+      if (result.results.length > 0) {
+        showToast(
+          `Found ${result.results.length} similar ${
+            result.results.length === 1 ? "image" : "images"
+          }!`,
+          "success"
+        );
+      } else {
+        showToast("No similar faces found in the repository.", "info");
       }
-    } catch (parseError) {
-      // Ignore parse errors, already showed generic message
     }
+  } catch (error) {
+    showToast(error.body.details, "error");
+    // Try to parse error response
   } finally {
     setLoadingState(submitButton, false, originalButtonText);
   }
@@ -341,14 +350,16 @@ const handleFormSubmit = async (ev) => {
 // Multiple faces form submission
 const handleMultipleFacesSubmit = async (ev) => {
   ev.preventDefault();
-  
+
   const submitButton = ev.target.querySelector('button[type="submit"]');
   const originalButtonText = submitButton.innerHTML;
 
   // Validation
-  const selectedFaces = ev.target.querySelectorAll('input[name="selected_faces"]:checked');
+  const selectedFaces = ev.target.querySelectorAll(
+    'input[name="selected_faces"]:checked'
+  );
   if (selectedFaces.length === 0) {
-    showToast('Please select at least one face before submitting.', 'warning');
+    showToast("Please select at least one face before submitting.", "warning");
     return;
   }
 
@@ -356,35 +367,39 @@ const handleMultipleFacesSubmit = async (ev) => {
 
   try {
     const formData = new FormData();
-    
+
     // Add selected faces
-    selectedFaces.forEach(checkbox => {
-      formData.append('selected_faces', checkbox.value);
+    selectedFaces.forEach((checkbox) => {
+      formData.append("selected_faces", checkbox.value);
     });
-    
+
     // Add threshold
-    formData.append('threshold', thresholdSlider.value);
+    formData.append("threshold", thresholdSlider.value);
 
-    const result = await makeAPICall('/multiple-faces', formData);
+    const result = await makeAPICall("/multiple-faces", formData);
 
-    if (result.status === 'success') {
+    if (result.status === "success") {
       // Hide multiple faces container
-      multipleFacesContainer.style.display = 'none';
-      
+      multipleFacesContainer.style.display = "none";
+
       // Show results
       resultsContainer.innerHTML = formatResults(result.results);
-      resultsContainer.classList.add('fade-in');
+      resultsContainer.classList.add("fade-in");
 
       if (result.results.length > 0) {
-        showToast(`Found ${result.results.length} similar ${result.results.length === 1 ? 'image' : 'images'}!`, 'success');
+        showToast(
+          `Found ${result.results.length} similar ${
+            result.results.length === 1 ? "image" : "images"
+          }!`,
+          "success"
+        );
       } else {
-        showToast('No similar faces found for the selected faces.', 'info');
+        showToast("No similar faces found for the selected faces.", "info");
       }
     }
-
   } catch (error) {
-    console.error('Multiple faces search failed:', error);
-    showToast('Something went wrong. Please try again.', 'error');
+    showToast(error.body.details, "error");
+    // Try to parse error response
   } finally {
     setLoadingState(submitButton, false, originalButtonText);
   }
@@ -397,13 +412,13 @@ const updateThresholdValue = () => {
 
 // Enhanced checkbox interactions
 const enhanceCheckboxes = () => {
-  document.addEventListener('change', (e) => {
-    if (e.target.matches('.face-select-checkbox')) {
-      const label = e.target.closest('.selectable-face');
+  document.addEventListener("change", (e) => {
+    if (e.target.matches(".face-select-checkbox")) {
+      const label = e.target.closest(".selectable-face");
       if (e.target.checked) {
-        label.style.transform = 'scale(0.95)';
+        label.style.transform = "scale(0.95)";
         setTimeout(() => {
-          label.style.transform = '';
+          label.style.transform = "";
         }, 150);
       }
     }
@@ -425,15 +440,24 @@ const originalUploadAreaContent = `
 const validateFileInput = (e) => {
   const file = e.target.files[0];
   if (file) {
-    const allowed = ["image/jpeg", "image/png", "image/gif", "image/bmp", "image/webp"];
+    const allowed = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/bmp",
+      "image/webp",
+    ];
     if (!allowed.includes(file.type)) {
-      showToast("Only JPG, JPEG, PNG, GIF, BMP, or WEBP images are allowed.", 'error');
+      showToast(
+        "Only JPG, JPEG, PNG, GIF, BMP, or WEBP images are allowed.",
+        "error"
+      );
       e.target.value = ""; // reset input
     }
   } else if (e.target.files.length === 0) {
     // Handle case where user cancels file selection - restore original state
     uploadArea.innerHTML = originalUploadAreaContent;
-    uploadArea.classList.remove('has-image');
+    uploadArea.classList.remove("has-image");
     e.target.value = "";
   }
 };
@@ -445,15 +469,15 @@ document.addEventListener("DOMContentLoaded", () => {
     imgInput.addEventListener("change", handleImagePreview);
     imgInput.addEventListener("change", validateFileInput);
   }
-  
+
   if (searchForm) {
     searchForm.addEventListener("submit", handleFormSubmit);
   }
-  
+
   if (multipleFacesForm) {
     multipleFacesForm.addEventListener("submit", handleMultipleFacesSubmit);
   }
-  
+
   if (thresholdSlider) {
     thresholdSlider.addEventListener("input", updateThresholdValue);
   }
@@ -470,10 +494,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Handle visibility change to reset any stuck loading states
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    document.querySelectorAll('.btn-loading').forEach(btn => {
-      btn.classList.remove('btn-loading');
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    document.querySelectorAll(".btn-loading").forEach((btn) => {
+      btn.classList.remove("btn-loading");
       btn.disabled = false;
     });
   }
