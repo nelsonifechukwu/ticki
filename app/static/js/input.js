@@ -397,6 +397,30 @@ document.addEventListener("DOMContentLoaded", () => {
   // Handle existing multiple faces form
   const existingMultipleFacesForm = document.getElementById("multiple-faces-form");
   if (existingMultipleFacesForm) {
+    // Add threshold value to existing form
+    const addThresholdToForm = () => {
+      // Remove any existing threshold input
+      const existingThresholdInput = existingMultipleFacesForm.querySelector('input[name="threshold"]');
+      if (existingThresholdInput) {
+        existingThresholdInput.remove();
+      }
+      
+      // Add current threshold value as hidden input
+      const thresholdInput = document.createElement('input');
+      thresholdInput.type = 'hidden';
+      thresholdInput.name = 'threshold';
+      thresholdInput.value = thresholdSlider ? thresholdSlider.value : '0.67';
+      existingMultipleFacesForm.appendChild(thresholdInput);
+    };
+    
+    // Add threshold initially
+    addThresholdToForm();
+    
+    // Update threshold when slider changes
+    if (thresholdSlider) {
+      thresholdSlider.addEventListener("input", addThresholdToForm);
+    }
+    
     existingMultipleFacesForm.addEventListener("submit", handleMultipleFacesSubmit);
   }
 
