@@ -200,8 +200,6 @@ const handleFormSubmit = async (ev) => {
 
   // Validation
   if (!imgInput.files || imgInput.files.length === 0) {
-    const requiredElement = document.querySelector(".is-required");
-    requiredElement.style.display = "block";
     showToast('Please select an image first', 'warning');
     return;
   }

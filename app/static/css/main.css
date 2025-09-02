@@ -497,22 +497,6 @@ body {
   animation: fadeIn 0.5s ease-out;
 }
 
-/* Error/Required Message */
-.is-required {
-  display: none;
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  background: var(--danger-color);
-  color: var(--text-white);
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  animation: fadeOut 4s ease-out forwards;
-  box-shadow: var(--shadow-medium);
-}
-
 /* Responsive Design */
 @media screen and (max-width: 1200px) {
   .main-content {
