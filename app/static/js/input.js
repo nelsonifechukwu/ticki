@@ -435,6 +435,17 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+// Store original upload area content
+const originalUploadAreaContent = `
+  <div class="upload-icon">
+    <i class="fas fa-cloud-upload-alt"></i>
+  </div>
+  <div class="upload-text">
+    <div class="upload-text-main">Drop image here</div>
+    <div class="upload-text-sub">or click to browse</div>
+  </div>
+`;
+
 //only accept specific input images during upload
 imgInput.addEventListener("change", function(e) {
   const file = e.target.files[0];
@@ -444,5 +455,10 @@ imgInput.addEventListener("change", function(e) {
       alert("Only JPG, JPEG, PNG, GIF, BMP, or WEBP images are allowed.");
       e.target.value = ""; // reset input
     }
+  } else if (e.target.files.length === 0) {
+    // Handle case where user cancels file selection - restore original state
+    uploadArea.innerHTML = originalUploadAreaContent;
+    uploadArea.classList.remove('has-image');
+    e.target.value = "";
   }
 });
