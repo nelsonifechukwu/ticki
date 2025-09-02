@@ -19,9 +19,18 @@ Ticki is a sophisticated content-based image retrieval (CBIR) system that allows
 
 - **Flask Web Application**: REST API and web interface (`app/routes.py`)
 - **Image Processing Engine**: Face detection and feature extraction (`app/cbir.py`)
-- **Embedding Management**: FAISS-based vector database for similarity search (`app/embeddings.py`)
+- **Embedding Management**: Pure FAISS-based vector database for similarity search (`app/embeddings.py`)
 - **Asynchronous Tasks**: Celery workers for background processing (`app/tasks.py`)
 - **Cloudinary Webhook**: External image processing pipeline (`cloudinary_wb.py`)
+
+### Architecture Evolution
+
+The system originally used HDF5 for embedding storage but was migrated to pure FAISS implementation due to thread-safety concerns. HDF5 file operations (open/close) in multithreaded environments could cause crashes, especially under concurrent load. The current FAISS-only approach provides:
+
+- **Thread-safe operations** with proper locking mechanisms
+- **In-memory persistence** with disk serialization for durability
+- **Atomic rebuilds** when adding new embeddings
+- **Better performance** with optimized vector operations
 
 ### Technology Stack
 
@@ -58,10 +67,6 @@ Ticki is a sophisticated content-based image retrieval (CBIR) system that allows
 3. **Environment Configuration**
    Create a `.env` file in the root directory:
    ```env
-   SECRET_KEY=your_secret_key_here
-   POSTGRES_USER=your_postgres_user
-   POSTGRES_PASS=your_postgres_password
-   POSTGRES_URL=your_postgres_url
    CELERY_BROKER_URL=redis://localhost:6379/0
    CELERY_RESULT_BACKEND=redis://localhost:6379/0
    CLOUDINARY_CLOUD_NAME=your_cloudinary_name
@@ -195,18 +200,72 @@ Ticki/
 ### Feature Extraction
 - Facenet512 model generates 512-dimensional embeddings
 - L2 normalization ensures consistent similarity calculations
-- Features cached as NumPy arrays for fast loading
+- Features cached as NumPy arrays (.npy files) for fast loading
+- BGR format conversion for DeepFace compatibility
 
-### Similarity Search
-- FAISS IndexFlatIP for exact cosine similarity search
-- Range search capability with configurable thresholds
-- Support for batch queries and multiple face matching
+### Similarity Search Evolution
+The system evolved from HDF5-based storage to pure FAISS implementation:
+
+**Previous HDF5 Approach:**
+- Combined HDF5 file storage with FAISS indexing
+- Thread-safety issues with concurrent file operations
+- Risk of database corruption under heavy load
+
+**Current FAISS-Only Approach:**
+- Pure in-memory FAISS index with disk serialization
+- Thread-safe operations with proper locking
+- Eliminates file I/O bottlenecks during searches
+- Automatic index rebuilding when adding new embeddings
+
+### Embedding Management API
+
+The `FaissEmbeddingsStore` class provides a comprehensive API for managing facial embeddings:
+
+#### Public Methods
+
+```python
+from app.embeddings import embeddings_handler
+
+# Load all face embeddings from files into FAISS index
+embeddings_handler.load_all_embeddings_in_faiss(sync_mode=False, external=False)
+
+# Add new feature vector to the index (with background rebuild)
+embeddings_handler.add_feature(query_feature, image_path, sync_mode=True)
+
+# Search for similar faces with threshold-based filtering
+results = embeddings_handler.get_similar_faces(query_feature, threshold=0.67)
+
+# Top-K similarity search
+top_results = embeddings_handler.search_topk(query_feature, k=50)
+```
+
+#### Technical Implementation
+
+**Index Types:**
+- `flat`: Exact search using `IndexFlatIP` (Inner Product for cosine similarity)
+- `ivf`: Approximate search using `IndexIVFFlat` with adaptive clustering
+
+**Thread Safety:**
+- `threading.Lock()` protects index rebuilds and writes
+- Atomic operations ensure data consistency
+- Background processing prevents UI blocking
+
+**Memory Management:**
+- In-memory index with disk persistence (`faiss_index.bin`, `faiss_names.pkl`)
+- L2 normalization for consistent cosine similarity calculations
+- Automatic index reconstruction when adding new embeddings
+
+**Search Algorithms:**
+- `range_search()`: Returns all matches above threshold (FLAT index only)
+- `search()`: Top-K search with threshold filtering (IVF index)
+- Batch query support for multiple face matching
 
 ### Scalability Features
 - Redis-based task deduplication prevents duplicate processing
-- HDF5 storage for efficient embedding persistence
-- Thread-safe operations for concurrent access
+- Pure FAISS storage eliminates HDF5 thread-safety issues
+- Thread-safe operations with proper locking mechanisms
 - Background processing prevents UI blocking
+- Automatic index rebuilding with atomic operations
 
 ## Development
 
