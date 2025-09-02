@@ -386,7 +386,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 //only accept specific input images during upload
-document.getElementById("input-img-preview").addEventListener("change", function(e) {
+imgInput.addEventListener("change", function(e) {
   const file = e.target.files[0];
   if (file) {
     const allowed = ["image/jpeg", "image/png", "image/gif", "image/bmp", "image/webp"];
