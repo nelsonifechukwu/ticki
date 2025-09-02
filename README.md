@@ -2,7 +2,7 @@
 
 Ticki is a sophisticated content-based image retrieval (CBIR) system that allows users to search for images containing specific faces within a large repository. Built with computer vision and deep learning technologies, Ticki can process face images, extract facial features, and find similar faces across thousands of images with high accuracy.
 
-<img width="1442" height="958" alt="Ticki - AI Face Search Interface" src="app/static/imgs/ticki.png" />
+<img width="1700" height="958" alt="Ticki - AI Face Search Interface" src="app/static/imgs/ticki.png" />
 
 ## Features
 
@@ -23,7 +23,7 @@ Ticki is a sophisticated content-based image retrieval (CBIR) system that allows
 - **Image Processing Engine**: Face detection and feature extraction (`app/cbir.py`)
 - **Embedding Management**: Pure FAISS-based vector database for similarity search (`app/embeddings.py`)
 - **Asynchronous Tasks**: Celery workers for background processing (`app/tasks.py`)
-- **Cloudinary Webhook**: External image processing pipeline (`cloudinary_wb.py`)
+- **Cloudinary Webhook Server**: Cloud-based image processing pipeline (`cloudinary_wb.py`)
 
 ### Architecture Evolution
 
@@ -33,6 +33,36 @@ The system originally used HDF5 for embedding storage but was migrated to pure F
 - **In-memory persistence** with disk serialization for durability
 - **Atomic rebuilds** when adding new embeddings
 - **Better performance** with optimized vector operations
+
+### Cloud-Based Alternative: Cloudinary Webhook Server
+
+Ticki includes a separate webhook server (`cloudinary_wb.py`) that provides a cloud-native approach to image processing as an alternative to local file storage:
+
+**Traditional Local Approach:**
+- Users upload images through the web interface
+- Images stored in `app/static/database/img_repo/img_data/`
+- Manual management of local image repository
+- Limited scalability for large datasets
+
+**Cloudinary Webhook Approach:**
+- Images uploaded directly to Cloudinary cloud storage
+- Automatic webhook triggers when new images are uploaded
+- Server processes images in real-time upon cloud upload
+- Eliminates need for local image storage management
+- Scalable cloud-based image repository
+
+**Webhook Features:**
+- **Signature Verification**: Validates authentic Cloudinary webhooks using HMAC-SHA1
+- **Automatic Processing**: Downloads and processes images immediately upon upload
+- **Face Search Integration**: Automatically searches for similar faces in existing repository
+- **API Integration**: Forwards results to external discovery APIs
+- **Error Handling**: Robust error handling for failed downloads or processing
+
+**Use Cases:**
+- **Mobile Applications**: Upload directly to cloud from mobile apps
+- **Third-party Integrations**: Allow external services to trigger face searches
+- **Scalable Repositories**: Handle large image collections without local storage limits
+- **Real-time Processing**: Process images as soon as they're uploaded to the cloud
 
 ### Technology Stack
 
@@ -75,7 +105,10 @@ The system originally used HDF5 for embedding storage but was migrated to pure F
    CLOUDINARY_API_KEY=your_cloudinary_key
    CLOUDINARY_API_SECRET=your_cloudinary_secret
    CLOUDINARY_WEBHOOK_SECRET=your_webhook_secret
+   TICKI_URL=https://your-external-api-endpoint.com/discovery/add
    ```
+
+   **Note**: `TICKI_URL` is only required if using the Cloudinary webhook server to forward results to an external API.
 
 4. **Start Redis Server**
    ```bash
@@ -110,6 +143,25 @@ The system originally used HDF5 for embedding storage but was migrated to pure F
 3. **Access the Web Interface**
    Open your browser to `http://localhost:5000`
 
+### Running the Cloudinary Webhook Server (Alternative)
+
+For cloud-based image processing, you can run the Cloudinary webhook server instead:
+
+1. **Start the Webhook Server**
+   ```bash
+   python cloudinary_wb.py
+   ```
+   This starts a separate Flask server on `http://127.0.0.1:5000`
+
+2. **Configure Cloudinary Webhooks**
+   In your Cloudinary dashboard:
+   - Go to Settings > Upload > Upload notifications
+   - Set notification URL to your server endpoint: `https://yourserver.com/cloudinary-webhook`
+   - Enable upload notifications
+
+3. **Test the Integration**
+   Upload images to your Cloudinary account - they'll be automatically processed for face search
+
 ### Adding Images to Repository
 
 1. Place images in `app/static/database/img_repo/img_data/`
@@ -129,10 +181,26 @@ The system originally used HDF5 for embedding storage but was migrated to pure F
 
 ### API Endpoints
 
+**Main Application (app/routes.py):**
 - `GET/POST /` - Main search interface
 - `POST /multiple-faces` - Multiple face selection endpoint
-- `POST /cloudinary-webhook` - Cloudinary integration webhook
-- `POST /upload` - Direct upload endpoint
+
+**Cloudinary Webhook Server (cloudinary_wb.py):**
+- `POST /cloudinary-webhook` - Cloudinary webhook endpoint for automatic image processing
+- `POST /upload` - Direct image upload to Cloudinary service
+
+**Webhook Server Usage:**
+```bash
+# Start the webhook server
+python cloudinary_wb.py
+
+# Test webhook endpoint
+curl -X POST https://yourserver.com/cloudinary-webhook \
+  -H "Content-Type: application/json" \
+  -H "X-Cld-Signature: signature" \
+  -H "X-Cld-Timestamp: timestamp" \
+  -d '{"notification_type": "upload", "secure_url": "https://...", "original_filename": "test.jpg"}'
+```
 
 ## Configuration
 
