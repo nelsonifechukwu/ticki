@@ -4,6 +4,8 @@ const imgInputLabel = document.getElementById("input-img-label");
 const imgContainer = document.querySelector(".input-img-container");
 const inputFormElement = document.querySelector(".img-input-form");
 const uploadArea = document.querySelector(".upload-area");
+const thresholdSlider = document.getElementById("threshold");
+const thresholdValue = document.querySelector(".threshold-value");
 
 // Toast notification system
 const showToast = (message, type = 'info') => {
@@ -244,9 +246,23 @@ const handleFormSubmit = async (ev) => {
       currentMultipleFacesContainer.style.display = "block";
       currentMultipleFacesContainer.classList.add('fade-in');
 
-      // Re-bind event listener
+      // Add threshold value to multiple faces form
       const multipleFacesForm = currentMultipleFacesContainer.querySelector("#multiple-faces-form");
       if (multipleFacesForm) {
+        // Remove any existing threshold input
+        const existingThresholdInput = multipleFacesForm.querySelector('input[name="threshold"]');
+        if (existingThresholdInput) {
+          existingThresholdInput.remove();
+        }
+        
+        // Add current threshold value as hidden input
+        const thresholdInput = document.createElement('input');
+        thresholdInput.type = 'hidden';
+        thresholdInput.name = 'threshold';
+        thresholdInput.value = thresholdSlider ? thresholdSlider.value : '0.67';
+        multipleFacesForm.appendChild(thresholdInput);
+        
+        // Re-bind event listener
         multipleFacesForm.addEventListener("submit", handleMultipleFacesSubmit);
       }
 
@@ -332,6 +348,13 @@ const handleMultipleFacesSubmit = async (ev) => {
   }
 };
 
+// Threshold slider update
+const updateThresholdValue = () => {
+  if (thresholdValue && thresholdSlider) {
+    thresholdValue.textContent = thresholdSlider.value;
+  }
+};
+
 // Enhanced checkbox interactions
 const enhanceCheckboxes = () => {
   document.addEventListener('change', (e) => {
@@ -361,6 +384,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Set up drag and drop
   if (uploadArea) {
     setupDragAndDrop();
+  }
+
+  // Set up threshold slider
+  if (thresholdSlider) {
+    thresholdSlider.addEventListener("input", updateThresholdValue);
   }
 
   // Enhanced interactions
