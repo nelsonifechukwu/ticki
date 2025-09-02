@@ -86,7 +86,7 @@ class MultipleInputFacesResource(HomeResource):
         query_features = np.vstack(features).astype(np.float32)  
         results = self._get_similar_faces(query_features, threshold)
         
-        # FIXED: Better duplicate removal that preserves highest similarity
+        #remove duplicates (choose highest similarity) from mutiple img comparisons 
         seen_names = {}
         unique_results = []
         
