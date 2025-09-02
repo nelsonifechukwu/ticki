@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 {% macro render_image(src, caption=None) %}
-<div>
-  <img src="{{ src }}" alt="IMG!" />
+<div class="result-item">
+  <img src="{{ src }}" alt="Found image" />
   {% if caption %}
-  <figcaption>{{ caption }}</figcaption>
+  <div class="similarity-score">{{ "%.2f"|format(caption) }}</div>
   {% endif %}
 </div>
 {% endmacro %}
 
-<html>
+<html lang="en">
   <head>
-    <meta http-equiv="refresh" content="" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ticki - AI Face Search</title>
     <link
       rel="stylesheet"
       href="{{url_for('static', filename='css/main.css')}}"
       type="text/css"
     />
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script
       type="text/javascript"
       src="{{url_for('static', filename='js/input.js')}}"
@@ -24,18 +28,22 @@
   </head>
   <body>
     <div class="container">
-      <div class="header">
-        <div>
-          <img src="{{url_for('static', filename='imgs/intro.jpg')}}" />
+      <header class="header">
+        <img src="{{url_for('static', filename='imgs/intro.jpg')}}" alt="Ticki Logo" />
+        <div class="header-text">
+          <h1 class="header-title">Ticki</h1>
+          <p class="header-subtitle">
+            AI-powered face search system. Upload an image with a face to find all similar faces in your repository.
+          </p>
         </div>
-        <div>
-          Welcome to Ticki. Given an input face, find all images in your
-          repository that contains the face.
-        </div>
-      </div>
+      </header>
 
-      <div class="main-content">
-        <div class="input-section">
+      <main class="main-content">
+        <section class="input-section">
+          <h2 class="input-section-title">
+            <i class="fas fa-upload"></i> Upload Image
+          </h2>
+          
           <form
             method="POST"
             class="img-input-form"
@@ -43,24 +51,47 @@
             action="{{url_for('index')}}"
           >
             <div class="input-img-container">
-              <div class="is-required">*!</div>
-              <label id="input-img-label" for="input-img-preview">+</label>
-              <input type="file" id="input-img-preview" />
-              <input type="file" id="q-img" name="query-img" />
+              <div class="is-required">Image Required!</div>
+              <label class="upload-area" id="input-img-label" for="input-img-preview">
+                <div class="upload-icon">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">
+                  <div class="upload-text-main">Drop image here</div>
+                  <div class="upload-text-sub">or click to browse</div>
+                </div>
+              </label>
+              <input type="file" id="input-img-preview" accept="image/*" />
+              <input type="file" id="q-img" name="query-img" accept="image/*" />
             </div>
-            <div>
+            
+            <div class="form-group">
+              <label class="form-label" for="repo-url">
+                <i class="fas fa-link"></i> Repository URL (Optional)
+              </label>
               <input
-                type="text"
+                type="url"
                 id="repo-url"
-                placeholder="Repository URL"
-                {#required#}
+                class="form-input"
+                placeholder="https://your-repository-url.com"
               />
             </div>
-            <div><input type="submit" /></div>
+            
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-search"></i> Search for Faces
+            </button>
           </form>
-        </div>
+        </section>
         <div class="img-selections">
-          <div class="multiple-faces-container">
+          <!-- Multiple Faces Selection Section -->
+          <section class="multiple-faces-container">
+            <h3 class="multiple-faces-title">
+              <i class="fas fa-user-friends"></i> Multiple Faces Detected
+            </h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
+              Select the faces you want to search for:
+            </p>
+            
             <form
               method="POST"
               action="{{url_for('multiple-faces')}}"
@@ -76,23 +107,46 @@
                     value="{{ face_name }}"
                     class="face-select-checkbox"
                   />
-                  {{ render_image(url_for('static', filename=extracted_faces_path
-                  ~ face_name)) }}
+                  <div>
+                    <img src="{{ url_for('static', filename=extracted_faces_path ~ face_name) }}" alt="Detected face" />
+                  </div>
                 </label>
                 {% endfor %}
               </div>
-              <button type="submit" class="submit-multiple-faces">
-                Submit Selected Faces
+              <button type="submit" class="btn btn-secondary submit-multiple-faces">
+                <i class="fas fa-search"></i> Search Selected Faces
               </button>
             </form>
-          </div>
-          <div class="selected-imgs">
-            {% for info in similarity_info %} {{ render_image(url_for('static',
-            filename=img_data_path ~ info[1]), caption=info[0])}} {% endfor %}
-          </div>
+          </section>
+
+          <!-- Results Section -->
+          <section class="results-section">
+            <h3 class="results-title">
+              <i class="fas fa-images"></i> Search Results
+            </h3>
+            
+            <div class="selected-imgs">
+              {% if similarity_info %}
+                {% for info in similarity_info %}
+                  {{ render_image(url_for('static', filename=img_data_path ~ info[1]), caption=info[0]) }}
+                {% endfor %}
+              {% else %}
+                <div class="no-results">
+                  <div class="no-results-icon">
+                    <i class="fas fa-search"></i>
+                  </div>
+                  <h4>No results yet</h4>
+                  <p>Upload an image to start searching for similar faces</p>
+                </div>
+              {% endif %}
+            </div>
+          </section>
         </div>
-      </div>
-      <div class="footer">@Ticki.</div>
+      </main>
+      
+      <footer class="footer">
+        <p>&copy; 2025 Ticki - AI Face Search System</p>
+      </footer>
     </div>
   </body>
 </html>

@@ -1,162 +1,386 @@
-const img_input = document.getElementById("input-img-preview");
-const img_input_label = document.getElementById("input-img-label");
-const img_container = document.querySelector(".input-img-container");
-const input_form_element = document.querySelector(".img-input-form");
-const multiple_faces_form_element = document.getElementById(
-  "multiple-faces-form"
-);
-const input_img_preview_handler = () => {
-  const file = img_input.files[0];
+// DOM Elements
+const imgInput = document.getElementById("input-img-preview");
+const imgInputLabel = document.getElementById("input-img-label");
+const imgContainer = document.querySelector(".input-img-container");
+const inputFormElement = document.querySelector(".img-input-form");
+const uploadArea = document.querySelector(".upload-area");
+
+// Toast notification system
+const showToast = (message, type = 'info') => {
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <i class="fas ${getToastIcon(type)}"></i>
+    <span>${message}</span>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  // Trigger animation
+  setTimeout(() => toast.classList.add('show'), 100);
+  
+  // Remove after 4 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => document.body.removeChild(toast), 300);
+  }, 4000);
+};
+
+const getToastIcon = (type) => {
+  const icons = {
+    success: 'fa-check-circle',
+    error: 'fa-exclamation-circle',
+    warning: 'fa-exclamation-triangle',
+    info: 'fa-info-circle'
+  };
+  return icons[type] || icons.info;
+};
+
+// Add toast CSS dynamically
+const addToastStyles = () => {
+  if (document.querySelector('#toast-styles')) return;
+  
+  const style = document.createElement('style');
+  style.id = 'toast-styles';
+  style.textContent = `
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      padding: 16px 20px;
+      border-radius: var(--border-radius-small);
+      box-shadow: var(--shadow-heavy);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateX(400px);
+      transition: var(--transition);
+      z-index: 1000;
+      min-width: 280px;
+      border-left: 4px solid var(--primary-color);
+    }
+    
+    .toast.show {
+      transform: translateX(0);
+    }
+    
+    .toast-success { border-left-color: var(--success-color); }
+    .toast-error { border-left-color: var(--danger-color); }
+    .toast-warning { border-left-color: var(--warning-color); }
+    .toast-info { border-left-color: var(--primary-color); }
+    
+    .toast i {
+      font-size: 18px;
+    }
+    
+    .toast-success i { color: var(--success-color); }
+    .toast-error i { color: var(--danger-color); }
+    .toast-warning i { color: var(--warning-color); }
+    .toast-info i { color: var(--primary-color); }
+  `;
+  document.head.appendChild(style);
+};
+
+// Initialize toast system
+addToastStyles();
+
+// Image preview handler
+const handleImagePreview = () => {
+  const file = imgInput.files[0];
   if (!file) return;
 
-  // Generate img preview
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    showToast('Please select a valid image file', 'error');
+    return;
+  }
+
+  // Validate file size (10MB limit)
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('File size must be less than 10MB', 'error');
+    return;
+  }
+
   const reader = new FileReader();
   reader.readAsDataURL(file);
 
   reader.onload = () => {
-    const new_img = document.createElement("img");
-    new_img.src = reader.result; //get the input img
+    // Update upload area
+    uploadArea.classList.add('has-image');
+    uploadArea.innerHTML = `<img src="${reader.result}" alt="Preview" class="preview-image" />`;
+    
+    showToast('Image loaded successfully!', 'success');
+  };
 
-    // Check if imgContainer already contains an img element
-    const existing_img = img_container.querySelector("img");
-    if (existing_img) {
-      img_container.replaceChild(new_img, existing_img);
-    } else {
-      img_container.insertBefore(new_img, img_input_label);
-    }
+  reader.onerror = () => {
+    showToast('Error reading file. Please try again.', 'error');
   };
 };
 
-const custom_form_submit_handler = async (ev) => {
-  ev.preventDefault();
+// Drag and drop functionality
+const setupDragAndDrop = () => {
+  let dragCounter = 0;
 
-  const q_img_input = document.getElementById("q-img");
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    dragCounter++;
+    uploadArea.classList.add('drag-over');
+  };
 
-  //check if there's no input img
-  if (!img_input.files || img_input.files.length === 0) {
-    const required_content = document.querySelector(".is-required");
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter === 0) {
+      uploadArea.classList.remove('drag-over');
+    }
+  };
 
-    required_content.classList.remove("is-required");
-    void required_content.offsetWidth; // force reflow
-    required_content.classList.add("is-required");
-    required_content.style.display = "block";
-    alert("Input image is required");
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
 
-    return;
+  const handleDrop = (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    uploadArea.classList.remove('drag-over');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      imgInput.files = files;
+      handleImagePreview();
+    }
+  };
+
+  // Add drag and drop styles
+  const dragStyles = `
+    .upload-area.drag-over {
+      border-color: var(--success-color) !important;
+      background: rgba(17, 153, 142, 0.1) !important;
+      transform: scale(1.02);
+    }
+  `;
+
+  if (!document.querySelector('#drag-styles')) {
+    const style = document.createElement('style');
+    style.id = 'drag-styles';
+    style.textContent = dragStyles;
+    document.head.appendChild(style);
   }
 
-  q_img_input.files = img_input.files;
-  form = ev.target; // don't submit form to server w/.submit()
-
-  // Prepare form data
-  const form_data = new FormData(form);
-  try {
-    const response = await fetch(form.action, {
-      method: "POST",
-      body: form_data,
-    });
-
-    const html_text = await response.text();
-    const parsed_doc = new DOMParser().parseFromString(html_text, "text/html");
-
-    // Find the newly rendered selected-imgs div from response
-    const new_selected_imgs = parsed_doc.querySelector(".selected-imgs");
-    const current_selected_imgs = document.querySelector(".selected-imgs");
-
-    if (new_selected_imgs && current_selected_imgs) {
-      current_selected_imgs.innerHTML = new_selected_imgs.innerHTML;
-    } else {
-      console.warn("Could not update .selected-imgs from response.");
-    }
-
-    //Find newly rendered .multiple_faces_container from response
-    const current_multiple_faces_container = document.querySelector(
-      ".multiple-faces-container"
-    );
-    const new_multiple_input_faces = parsed_doc
-      .querySelector(".multiple-faces-container .multiple-faces")
-      ?.querySelectorAll(".selectable-face");
-
-    if (new_multiple_input_faces.length > 0) {
-      const new_multiple_faces_container = parsed_doc.querySelector(
-        ".multiple-faces-container"
-      );
-      current_multiple_faces_container.innerHTML =
-        new_multiple_faces_container.innerHTML;
-      current_multiple_faces_container.style.display = "block";
-
-      //re-bind the event listener to the replaced form
-      const multiple_faces_form = current_multiple_faces_container.querySelector(
-        "#multiple-faces-form"
-      );
-      if (multiple_faces_form) {
-        multiple_faces_form.addEventListener("submit", bindMultipleFacesSubmit);
-      }
-    } else {
-      current_multiple_faces_container.style.display = "none";
-    }
-  } catch (err) {
-    console.error("Failed to submit form:", err);
-  }
+  uploadArea.addEventListener('dragenter', handleDragEnter);
+  uploadArea.addEventListener('dragleave', handleDragLeave);
+  uploadArea.addEventListener('dragover', handleDragOver);
+  uploadArea.addEventListener('drop', handleDrop);
 };
 
-const bindMultipleFacesSubmit = async (ev) => {
-  ev.preventDefault();
-  const form = ev.target;
-
-  //check if none of the extracted faces were selected for submission
-  const selected = form.querySelectorAll(
-    'input[name="selected_faces"]:checked'
-  );
-  if (selected.length === 0) {
-    alert("Please select at least one face before submitting.");
-    return;
-  }
-
-  const form_data = new FormData(form);
-
-  try {
-    const response = await fetch(form.action, {
-      method: "POST",
-      body: form_data,
-    });
-
-    const html_text = await response.text();
-    const parsed_doc = new DOMParser().parseFromString(html_text, "text/html");
-
-    // Update selected images
-    const new_selected_imgs = parsed_doc.querySelector(".selected-imgs");
-    const current_selected_imgs = document.querySelector(".selected-imgs");
-
-    //don't display current_multiple_faces_container
-    const current_multiple_faces_container = document.querySelector(
-      ".multiple-faces-container"
-    );
-    current_multiple_faces_container.style.display = "none";
-
-    if (new_selected_imgs && current_selected_imgs) {
-      current_selected_imgs.innerHTML = new_selected_imgs.innerHTML;
-    } else {
-      console.warn("Could not update .selected-imgs from response.");
-    }
-  } catch (err) {
-    console.error("Failed to submit multiple faces form:", err);
-  }
-};
-
-img_input.addEventListener("change", input_img_preview_handler);
-input_form_element.addEventListener("submit", custom_form_submit_handler);
-document.addEventListener("DOMContentLoaded", () => {
-  const multiple_faces_form_element = document.getElementById(
-    "multiple-faces-form"
-  );
-  if (multiple_faces_form_element) {
-    multiple_faces_form_element.addEventListener(
-      "submit",
-      bindMultipleFacesSubmit
-    );
-    console.log("✔️ Listener attached to #multiple-faces-form");
+// Loading state management
+const setLoadingState = (button, isLoading, originalText) => {
+  if (isLoading) {
+    button.disabled = true;
+    button.classList.add('btn-loading');
+    button.innerHTML = `<span>Processing...</span>`;
   } else {
-    console.warn("⚠️ Form not found on DOMContentLoaded");
+    button.disabled = false;
+    button.classList.remove('btn-loading');
+    button.innerHTML = originalText;
+  }
+};
+
+// Form submission handler
+const handleFormSubmit = async (ev) => {
+  ev.preventDefault();
+
+  const qImgInput = document.getElementById("q-img");
+  const submitButton = ev.target.querySelector('button[type="submit"]');
+  const originalButtonText = submitButton.innerHTML;
+
+  // Validation
+  if (!imgInput.files || imgInput.files.length === 0) {
+    const requiredElement = document.querySelector(".is-required");
+    requiredElement.style.display = "block";
+    showToast('Please select an image first', 'warning');
+    return;
+  }
+
+  // Set loading state
+  setLoadingState(submitButton, true, originalButtonText);
+
+  try {
+    // Transfer file to hidden input
+    qImgInput.files = imgInput.files;
+    const form = ev.target;
+    const formData = new FormData(form);
+
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const htmlText = await response.text();
+    const parsedDoc = new DOMParser().parseFromString(htmlText, "text/html");
+
+    // Update results section
+    const newSelectedImgs = parsedDoc.querySelector(".selected-imgs");
+    const currentSelectedImgs = document.querySelector(".selected-imgs");
+
+    if (newSelectedImgs && currentSelectedImgs) {
+      currentSelectedImgs.innerHTML = newSelectedImgs.innerHTML;
+      currentSelectedImgs.classList.add('fade-in');
+    }
+
+    // Handle multiple faces
+    const currentMultipleFacesContainer = document.querySelector(".multiple-faces-container");
+    const newMultipleInputFaces = parsedDoc.querySelector(".multiple-faces-container .multiple-faces")?.querySelectorAll(".selectable-face");
+
+    if (newMultipleInputFaces && newMultipleInputFaces.length > 0) {
+      const newMultipleFacesContainer = parsedDoc.querySelector(".multiple-faces-container");
+      currentMultipleFacesContainer.innerHTML = newMultipleFacesContainer.innerHTML;
+      currentMultipleFacesContainer.style.display = "block";
+      currentMultipleFacesContainer.classList.add('fade-in');
+
+      // Re-bind event listener
+      const multipleFacesForm = currentMultipleFacesContainer.querySelector("#multiple-faces-form");
+      if (multipleFacesForm) {
+        multipleFacesForm.addEventListener("submit", handleMultipleFacesSubmit);
+      }
+
+      showToast('Multiple faces detected! Please select which faces to search for.', 'info');
+    } else {
+      currentMultipleFacesContainer.style.display = "none";
+      
+      // Check if we have results
+      const hasResults = newSelectedImgs && newSelectedImgs.children.length > 0;
+      if (hasResults) {
+        const resultsCount = newSelectedImgs.querySelectorAll('.result-item').length;
+        showToast(`Found ${resultsCount} similar ${resultsCount === 1 ? 'image' : 'images'}!`, 'success');
+      } else {
+        showToast('No similar faces found in the repository.', 'info');
+      }
+    }
+
+  } catch (error) {
+    console.error("Form submission failed:", error);
+    showToast('Something went wrong. Please try again.', 'error');
+  } finally {
+    setLoadingState(submitButton, false, originalButtonText);
+  }
+};
+
+// Multiple faces form submission
+const handleMultipleFacesSubmit = async (ev) => {
+  ev.preventDefault();
+  
+  const form = ev.target;
+  const submitButton = form.querySelector('button[type="submit"]');
+  const originalButtonText = submitButton.innerHTML;
+
+  // Validation
+  const selectedFaces = form.querySelectorAll('input[name="selected_faces"]:checked');
+  if (selectedFaces.length === 0) {
+    showToast('Please select at least one face before submitting.', 'warning');
+    return;
+  }
+
+  setLoadingState(submitButton, true, originalButtonText);
+
+  try {
+    const formData = new FormData(form);
+
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const htmlText = await response.text();
+    const parsedDoc = new DOMParser().parseFromString(htmlText, "text/html");
+
+    // Update results
+    const newSelectedImgs = parsedDoc.querySelector(".selected-imgs");
+    const currentSelectedImgs = document.querySelector(".selected-imgs");
+    const currentMultipleFacesContainer = document.querySelector(".multiple-faces-container");
+
+    // Hide multiple faces container
+    currentMultipleFacesContainer.style.display = "none";
+
+    if (newSelectedImgs && currentSelectedImgs) {
+      currentSelectedImgs.innerHTML = newSelectedImgs.innerHTML;
+      currentSelectedImgs.classList.add('fade-in');
+
+      const resultsCount = newSelectedImgs.querySelectorAll('.result-item').length;
+      if (resultsCount > 0) {
+        showToast(`Found ${resultsCount} similar ${resultsCount === 1 ? 'image' : 'images'}!`, 'success');
+      } else {
+        showToast('No similar faces found for the selected faces.', 'info');
+      }
+    }
+
+  } catch (error) {
+    console.error("Multiple faces form submission failed:", error);
+    showToast('Something went wrong. Please try again.', 'error');
+  } finally {
+    setLoadingState(submitButton, false, originalButtonText);
+  }
+};
+
+// Enhanced checkbox interactions
+const enhanceCheckboxes = () => {
+  document.addEventListener('change', (e) => {
+    if (e.target.matches('.face-select-checkbox')) {
+      const label = e.target.closest('.selectable-face');
+      if (e.target.checked) {
+        label.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          label.style.transform = '';
+        }, 150);
+      }
+    }
+  });
+};
+
+// Initialize everything when DOM is loaded
+document.addEventListener("DOMContentLoaded", () => {
+  // Set up event listeners
+  if (imgInput) {
+    imgInput.addEventListener("change", handleImagePreview);
+  }
+  
+  if (inputFormElement) {
+    inputFormElement.addEventListener("submit", handleFormSubmit);
+  }
+
+  // Set up drag and drop
+  if (uploadArea) {
+    setupDragAndDrop();
+  }
+
+  // Enhanced interactions
+  enhanceCheckboxes();
+
+  // Handle existing multiple faces form
+  const existingMultipleFacesForm = document.getElementById("multiple-faces-form");
+  if (existingMultipleFacesForm) {
+    existingMultipleFacesForm.addEventListener("submit", handleMultipleFacesSubmit);
+  }
+
+  console.log("✅ Ticki UI initialized successfully");
+});
+
+// Handle visibility change to reset any stuck loading states
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    document.querySelectorAll('.btn-loading').forEach(btn => {
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+    });
   }
 });
