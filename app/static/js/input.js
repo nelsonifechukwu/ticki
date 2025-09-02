@@ -384,3 +384,15 @@ document.addEventListener('visibilitychange', () => {
     });
   }
 });
+
+//only accept specific input images during upload
+document.getElementById("input-img-preview").addEventListener("change", function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const allowed = ["image/jpeg", "image/png", "image/gif", "image/bmp", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      alert("Only JPG, JPEG, PNG, GIF, BMP, or WEBP images are allowed.");
+      e.target.value = ""; // reset input
+    }
+  }
+});
