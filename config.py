@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from datetime import timedelta
 
-load_dotenv()
+load_dotenv() 
 # For Development Alone!!!!!!!!!!!!!!!!
 class Config:
     POSTGRES_USER = os.environ.get('POSTGRES_USER')
@@ -29,3 +29,7 @@ class Config:
     CLOUDINARY_WEBHOOK_SECRET = os.environ.get('CLOUDINARY_WEBHOOK_SECRET')
     
     TICKI_URL = os.environ.get("TICKI_URL")
+    
+    # SPA Mode Configuration
+    # Set to True for Single Page Application mode, False for Server-Side Rendering
+    APP_MODE = os.environ.get('APP_MODE')

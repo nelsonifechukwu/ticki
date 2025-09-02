@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ticki - AI Face Search</title>
+    <link rel="stylesheet" href="/static/css/main.css" type="text/css" />
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <img src="/static/imgs/intro.jpg" alt="Ticki Logo" />
+        <div class="header-text">
+          <h1 class="header-title">Ticki</h1>
+          <p class="header-subtitle">
+            AI-powered face search system. Upload an image with a face to find all similar faces in your repository.
+          </p>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section class="input-section">
+          <h2 class="input-section-title">
+            <i class="fas fa-upload"></i> Upload Image
+          </h2>
+          
+          <form class="img-input-form" enctype="multipart/form-data" id="search-form">
+            <div class="input-img-container">
+              <label class="upload-area" id="input-img-label" for="input-img-preview">
+                <div class="upload-icon">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">
+                  <div class="upload-text-main">Drop image here</div>
+                  <div class="upload-text-sub">or click to browse</div>
+                </div>
+              </label>
+              <input type="file" id="input-img-preview" name="query-img" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp" />
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="threshold">
+                <i class="fas fa-sliders-h"></i> Similarity Threshold
+              </label>
+              <input
+                type="range"
+                id="threshold"
+                name="threshold"
+                min="0.1"
+                max="1.0"
+                step="0.01"
+                value="0.67"
+                class="form-input"
+              />
+              <span class="threshold-value">0.67</span>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-search"></i> Search for Faces
+            </button>
+          </form>
+        </section>
+
+        <div class="img-selections">
+          <!-- Multiple Faces Selection Section -->
+          <section class="multiple-faces-container" style="display: none;">
+            <h3 class="multiple-faces-title">
+              <i class="fas fa-user-friends"></i> Multiple Faces Detected
+            </h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
+              Select the faces you want to search for:
+            </p>
+            
+            <form id="multiple-faces-form">
+              <div class="multiple-faces" id="faces-grid">
+                <!-- Dynamically populated by JavaScript -->
+              </div>
+              <button type="submit" class="btn btn-secondary submit-multiple-faces">
+                <i class="fas fa-search"></i> Search Selected Faces
+              </button>
+            </form>
+          </section>
+
+          <!-- Results Section -->
+          <section class="results-section">
+            <h3 class="results-title">
+              <i class="fas fa-images"></i> Search Results
+            </h3>
+            
+            <div class="selected-imgs" id="results-container">
+              <div class="no-results">
+                <div class="no-results-icon">
+                  <i class="fas fa-search"></i>
+                </div>
+                <h4>No results yet</h4>
+                <p>Upload an image to start searching for similar faces</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+      
+      <footer class="footer">
+        <p>&copy; 2025 Ticki - AI Face Search System</p>
+      </footer>
+    </div>
+
+    <script src="/static/js/spa.js"></script>
+  </body>
+</html>
