@@ -112,14 +112,8 @@ def compare_and_return(img_path: str):
         return {"error": "Internal Server Error"}, 500
     
         
-class CloudinaryWebhook(Resource):
-    
+class CloudinaryWebhook(Resource):        
     def post(self):
-        query_param = request.args.get()
-        if query_param:
-            pass
-            return
-        
         signature = request.headers.get("X-Cld-Signature")
         timestamp = request.headers.get("X-Cld-Timestamp")
 
@@ -165,10 +159,19 @@ class CloudinaryUpload(Resource):
         except Exception as e:
             logger.error(f"Upload error: {e}")
             return {"error": str(e)}, 500
+        
+class TickiGet(Resource):
+    def get(self):
+        query_param = request.args.get()
+        
+        if query_param:
+            pass
+            return
 
 # Register endpoints
 api.add_resource(CloudinaryWebhook, "/cloudinary-webhook")
 api.add_resource(CloudinaryUpload, "/upload")
+api.add_resource(TickiGet, "/user_image?api_key=asasasasas&url=")
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000)
