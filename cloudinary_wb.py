@@ -115,6 +115,11 @@ def compare_and_return(img_path: str):
 class CloudinaryWebhook(Resource):
     
     def post(self):
+        query_param = request.args.get()
+        if query_param:
+            pass
+            return
+        
         signature = request.headers.get("X-Cld-Signature")
         timestamp = request.headers.get("X-Cld-Timestamp")
 
