@@ -95,7 +95,7 @@ class ImageProcessor:
             logger.error(f"Error processing {img_path.name}: {str(e)}")
             raise
 
-    def extract_features(self, face_path: str) -> np.ndarray:
+    def extract_features(self, face_path: str, save=True) -> np.ndarray:
         face_path = Path(face_path)
         face_img = Image.open(face_path).convert("RGB").resize((224, 224))
         arr = np.array(face_img) # RGB, uint8, shape (224, 224, 3)
@@ -114,9 +114,10 @@ class ImageProcessor:
             embedding = np.array(embedding_obj["embedding"], dtype=np.float64)
             embedding = embedding / np.linalg.norm(embedding)
 
-            embeddings_path = self.extracted_faces_embeddings_path / face_path.name
-            feature_path = embeddings_path.with_name(embeddings_path.name + ".npy")
-            np.save(feature_path, embedding)
+            if save:
+                embeddings_path = self.extracted_faces_embeddings_path / face_path.name
+                feature_path = embeddings_path.with_name(embeddings_path.name + ".npy")
+                np.save(feature_path, embedding)
             return embedding
 
         except Exception as e:
