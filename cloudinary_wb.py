@@ -8,6 +8,7 @@ import logging
 import requests
 import cloudinary
 from pathlib import Path
+from typing import Tuple
 from datetime import datetime
 from flask_restful import Resource, Api
 from flask import Flask, request
@@ -45,46 +46,44 @@ def verify_upload_signature(body: str, timestamp: str, signature: str) -> bool:
         logger.error(f"Signature verification error: {e}")
         return False
 
-def download_img(payload: dict):
+def download_img(payload: dict) -> Tuple[bytes, str]:
+    """Download image directly to memory without saving to disk"""
     secure_url = payload.get("secure_url")
     original_filename = payload.get("original_filename", f"download_{datetime.utcnow().timestamp()}")
-    extension = payload.get("format", "jpg")
-
+    
     if secure_url:
         try:
             response = requests.get(secure_url)
             response.raise_for_status()
-            filepath = os.path.join("", f"{original_filename}.{extension}")
-            with open(filepath, "wb") as f:
-                f.write(response.content)
-            logger.info(f"Downloaded file to: {filepath}")
-            return filepath
+            logger.info(f"Downloaded image to memory: {original_filename}")
+            return response.content, original_filename
         except Exception as e:
             logger.error(f"Failed to download image: {e}")
+            return None, None
     else:
         logger.warning("No secure_url in webhook payload.")
-        return None
+        return None, None
 
-def compare_and_return(img_path: str):
+def compare_and_return(image_bytes: bytes, img_name: str):
+    """Process image completely in memory without saving to disk"""
     
     try: 
-        query_face_paths_str = fe.extract_faces(img_path)
-        query_face_paths = ast.literal_eval(query_face_paths_str)
+        # Extract faces from image bytes
+        query_faces = fe.extract_faces(image_bytes)
 
-        #handle input img w/multiple faces
-        if not query_face_paths:
+        # Handle input img w/multiple faces
+        if not query_faces:
             logger.warning("No face found in uploaded image.")
             return {"error": "No face detected in input image"}, 400
 
-        if len(query_face_paths) > 1:
+        if len(query_faces) > 1:
             logger.warning("Multiple faces found in uploaded image.")
             return {"error": "Input image should contain only one face"}, 400
 
-        query_face_path = Path(query_face_paths[0])
-        query_feature = fe.extract_features(query_face_path).astype(float)
+        # Extract features from the face PIL image
+        query_face = query_faces[0]
+        query_feature = fe.extract_features(query_face).astype(float)
         results = embeddings_handler.get_similar_faces(query_feature)
-        
-        img_name = Path(img_path).name
         
         payload = {
             "status": "success",
@@ -112,7 +111,6 @@ def compare_and_return(img_path: str):
         logger.error(f"Error comparing face: {e}")
         return {"error": "Internal Server Error"}, 500
     
-        
 class CloudinaryWebhook(Resource):        
     def post(self):
         signature = request.headers.get("X-Cld-Signature")
@@ -139,9 +137,9 @@ class CloudinaryWebhook(Resource):
             return {"error": "Invalid signature"}, 403
 
         logger.info("✅ Verified Cloudinary Webhook.")
-        filepath = download_img(payload)  # Return this from download_img
-        if filepath:
-            return compare_and_return(Path(filepath))
+        image_bytes, img_name = download_img(payload)
+        if image_bytes:
+            return compare_and_return(image_bytes, img_name)
         else:
             return {"error": "Failed to download image"}, 500
         # return {"status": "received"}, 200
