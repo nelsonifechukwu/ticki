@@ -215,12 +215,11 @@ class FaissEmbeddingsStore:
             query_feature = np.atleast_2d(np.array(query_feature, dtype=np.float32))
             query_feature = FaissEmbeddingsStore._l2_normalize(query_feature)
             
+            results = []
+            # # Process all queries (automatically handles single or multiple)
             # Use range_search for threshold-based search
             # lims, similarities, indices = self.index.range_search(query_feature, threshold)
-            
-            results = []
-            
-            # # Process all queries (automatically handles single or multiple)
+
             # for i in range(query_feature.shape[0]):
             #     start, end = lims[i], lims[i + 1]
             #     for sim, idx in zip(similarities[start:end], indices[start:end]):
