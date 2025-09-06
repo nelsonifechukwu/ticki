@@ -161,16 +161,24 @@ class CloudinaryUpload(Resource):
         
 class TickiGet(Resource):
     def get(self):
-        query_param = request.args.get()
+        args = request.args.get()
+        if Config.CLOUDINARY_API_SECRET != args["api_key"]:
+            return {"error": "Forbidden Access - Bad API KEY"}, 403
+        try: 
+            img_url = args["url"]
+            img_name = args["img_name"]
+            response = requests.get(img_url)
+            response.raise_for_status()
+            logger.info(f"Downloaded image to memory")
+            return compare_and_return(response.content, img_name)
+        except Exception as e:
+            return {"error": str(e)}, 400
         
-        if query_param:
-            pass
-            return
 
 # Register endpoints
 api.add_resource(CloudinaryWebhook, "/cloudinary-webhook")
 api.add_resource(CloudinaryUpload, "/upload")
-api.add_resource(TickiGet, "/user_image?api_key=asasasasas&url=")
+api.add_resource(TickiGet, "/user_image")
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000)
