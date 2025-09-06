@@ -63,6 +63,7 @@ def download_img(payload: dict):
             logger.error(f"Failed to download image: {e}")
     else:
         logger.warning("No secure_url in webhook payload.")
+        return None
 
 def compare_and_return(img_path: str):
     
