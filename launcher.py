@@ -25,7 +25,7 @@ if __name__ == "__main__":
         logger.info("Face extraction Started...")
         from app.tasks import main
         from app.celery import redis_client
-        reprocess = False
+        reprocess = True
         if reprocess:
             redis_client.flushdb()
         main(reprocess) 

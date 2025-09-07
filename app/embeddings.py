@@ -276,41 +276,54 @@ class FaissEmbeddingsStore:
         
         return results
     
-    def load_all_embeddings_in_faiss(self, sync_mode: bool = False, external:bool=False):
-        """Load all face embeddings into FAISS index."""
-    
-        def _worker():
-            if external:
-                self._load_index_in_mem()
-                return
+    def load_all_embeddings_from_npy_files(self, cleanup_npy: bool = True):
+        """Load all .npy face embeddings into FAISS index and optionally clean up files."""
+        try:
             features = []
-            img_names = []
+            face_ids = []
             
-            for feature_path in self.extracted_faces_embeddings_path.glob("*.npy"):
-                features.append(np.load(feature_path))
-                
-                # Get the reference img of the face
-                img_ext = Path(feature_path.stem).suffix
-                img_name = feature_path.stem.split("_face")[0]
-                img_names.append(img_name + img_ext)
+            npy_files = list(self.extracted_faces_embeddings_path.glob("*.npy"))
+            if not npy_files:
+                logger.warning("No face embeddings (.npy files) found")
+                return
+            
+            logger.info(f"Loading {len(npy_files)} .npy embedding files...")
+            
+            for feature_path in npy_files:
+                try:
+                    embedding = np.load(feature_path)
+                    features.append(embedding)
+                    
+                    # Use the full filename (with _face_i) as the face ID
+                    face_id = feature_path.stem  # e.g., "IMG_001_face_0"
+                    face_ids.append(face_id.split("_face")[0]) #id=IMG_001 (only name)
+                    
+                except Exception as e:
+                    logger.error(f"Failed to load {feature_path}: {e}")
 
             if not features:
-                logger.warning("No face embeddings found")
-                return np.empty((0, 512), dtype=np.float32), []
+                logger.warning("No valid embeddings loaded from .npy files")
+                return
 
-            features = np.array(features, dtype=object).astype(np.float32)
+            # Stack all embeddings and write to FAISS
+            features_array = np.vstack(features).astype(np.float32)
+            self._write(features_array, face_ids)
             
-            self._write(features, img_names)  # persists + rebuilds FAISS
-            logger.info(f"Loaded {len(img_names)} embeddings into FAISS index.")
+            logger.info(f"✅ Loaded {len(face_ids)} embeddings into FAISS index")
+            
+            # Clean up .npy files after successful load
+            if cleanup_npy:
+                for npy_file in npy_files:
+                    try:
+                        npy_file.unlink()
+                    except Exception as e:
+                        logger.error(f"Failed to delete {npy_file}: {e}")
+                logger.info(f"🧹 Cleaned up {len(npy_files)} .npy files")
+                        
+        except Exception as e:
+            logger.error(f"❌ Failed to load embeddings from .npy files: {e}")
+            raise
 
-        if sync_mode:
-            from threading import Thread
-            t = Thread(target=_worker, daemon=True)
-            t.start()
-            logger.info("Started background FAISS embeddings load.")
-        else:
-            _worker()
-        #return features, img_names
 
     def add_feature(self, query_feature: np.ndarray, query_img_path, sync_mode: bool = True):
         """
@@ -382,4 +395,3 @@ class FaissEmbeddingsStore:
             _worker()
 # Global instance
 embeddings_handler = FaissEmbeddingsStore(database=database,index_type="flat")
-embeddings_handler.load_all_embeddings_in_faiss()
