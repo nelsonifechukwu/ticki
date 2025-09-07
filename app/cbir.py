@@ -128,7 +128,7 @@ class ImageProcessor:
             logger.error(error_msg)
             raise Exception(error_msg)
 
-    def extract_features(self, face_input: Union[str, Image.Image, np.ndarray, bytearray], save=False) -> np.ndarray:
+    def extract_features(self, face_input: Union[str, Image.Image, np.ndarray, bytearray, bytes], save=False) -> np.ndarray:
         """
         Extract features from file path (str), PIL Image, numpy array, or bytearray.
         """
