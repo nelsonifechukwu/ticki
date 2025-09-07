@@ -147,7 +147,7 @@ def load_npy_to_faiss(results):
         logger.info(f"📦 All workers completed. Loading {total_stored} embeddings into FAISS...")
         
         # Load all .npy files into FAISS in a single batch operation
-        embeddings_handler.load_all_embeddings_from_npy_files()
+        embeddings_handler.load_all_embeddings_in_faiss()
         
         logger.info(f"✅ Successfully processed {total_processed} faces")
         logger.info(f"✅ Loaded {total_stored} embeddings into FAISS")
