@@ -64,14 +64,26 @@ class ImageProcessor:
         shutil.move(str(img_path), self.failed_extractions_path)
         logger.error(f"{reason} in {img_path.name}")
 
-    def extract_faces(self, image_bytes: bytes):
+    def extract_faces(self, image_input):
         """
-        Extract faces from image bytes only. Returns list of numpy arrays.
+        Extract faces from bytes, file path, or numpy array. Returns list of numpy arrays.
         """
         try:
-            from io import BytesIO
-            img_pil = Image.open(BytesIO(image_bytes)).convert("RGB")
-            img_array = np.array(img_pil)
+            # Handle different input types efficiently
+            if isinstance(image_input, bytes):
+                # Web response bytes
+                from io import BytesIO
+                img_pil = Image.open(BytesIO(image_input)).convert("RGB")
+                img_array = np.array(img_pil)
+            elif isinstance(image_input, str):
+                # File path - direct load
+                img_pil = Image.open(image_input).convert("RGB")
+                img_array = np.array(img_pil)
+            elif isinstance(image_input, np.ndarray):
+                # Already a numpy array
+                img_array = image_input
+            else:
+                raise ValueError("image_input must be bytes, file path string, or numpy array")
 
             # Extract faces using RetinaFace
             faces = RetinaFace.extract_faces(
