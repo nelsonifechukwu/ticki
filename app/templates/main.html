@@ -103,16 +103,17 @@
               enctype="multipart/form-data"
             >
               <div class="multiple-faces">
-                {% for face_name in input_faces %}
+                {% for face in input_faces %}
                 <label class="selectable-face">
                   <input
                     type="checkbox"
                     name="selected_faces"
-                    value="{{ face_name }}"
+                    value="face_{{ face.index }}"
                     class="face-select-checkbox"
                   />
                   <div>
-                    <img src="{{ url_for('static', filename=extracted_faces_path ~ face_name) }}" alt="Detected face" />
+                    <img src="/face_image/{{ face.index }}" alt="{{ face.name }}" />
+                    <span class="face-label">{{ face.name }}</span>
                   </div>
                 </label>
                 {% endfor %}
