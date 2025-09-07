@@ -5,7 +5,7 @@ import logging
 import coloredlogs
 import numpy as np
 from PIL import Image
-from typing import Tuple, Union
+from typing import List
 from pathlib import Path
 from datetime import datetime
 from deepface import DeepFace
@@ -64,7 +64,7 @@ class ImageProcessor:
         shutil.move(str(img_path), self.failed_extractions_path)
         logger.error(f"{reason} in {img_path.name}")
 
-    def extract_faces(self, image_input):
+    def extract_faces(self, image_input)->List[np.ndarray]:
         """
         Extract faces from bytes, file path, or numpy array. Returns list of numpy arrays.
         """
