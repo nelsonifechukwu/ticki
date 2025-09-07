@@ -88,8 +88,118 @@ def process_and_store_image(image_input, img_name: str):
         raise
 
 @celery_app.task
-def process_directory_batch(reprocess=False):
-    """Batch process all directory images efficiently (laptop use case)."""
+def process_single_image_to_npy(image_path: str, reprocess: bool = False):
+    """Process single image, extract faces and save embeddings as .npy files."""
+    try:
+        img_name = Path(image_path).name
+        
+        # Check if already processed
+        if not reprocess and redis_client.exists(img_name):
+            logger.info(f"Skipping {img_name}: Already processed.")
+            return {"processed": 0, "stored": 0, "image": img_name}
+            
+        redis_client.set(img_name, "in-progress")
+        
+        # Extract faces
+        faces = fe.extract_faces(image_path)
+        if not faces:
+            redis_client.set(img_name, 'no-faces')
+            return {"processed": 0, "stored": 0, "image": img_name}
+        
+        stored_count = 0
+        # Process each face and save as .npy
+        for i, face_array in enumerate(faces):
+            try:
+                embedding = fe.extract_features(face_array)
+                
+                # Save embedding to .npy file with face ID
+                face_id = f"{Path(img_name).stem}_face_{i}"
+                npy_path = embeddings_handler.extracted_faces_embeddings_path / f"{face_id}.npy"
+                np.save(npy_path, embedding)
+                
+                stored_count += 1
+                logger.debug(f"Saved {face_id}.npy")
+                
+            except Exception as e:
+                logger.error(f"Failed to process face {i} from {img_name}: {e}")
+        
+        if stored_count > 0:
+            redis_client.set(img_name, 'completed')
+            logger.info(f"✅ {img_name}: Processed {len(faces)} faces, stored {stored_count} embeddings")
+        else:
+            redis_client.set(img_name, 'failed: no embeddings generated')
+            
+        return {"processed": len(faces), "stored": stored_count, "image": img_name}
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to process {image_path}: {e}")
+        redis_client.set(Path(image_path).name, f'failed: {e}')
+        return {"processed": 0, "stored": 0, "image": Path(image_path).name, "error": str(e)}
+
+@celery_app.task
+def load_npy_to_faiss(results):
+    """Callback task to load all .npy files into FAISS after workers complete."""
+    try:
+        # Aggregate results from all workers
+        total_processed = sum(r['processed'] for r in results)
+        total_stored = sum(r['stored'] for r in results)
+        
+        logger.info(f"📦 All workers completed. Loading {total_stored} embeddings into FAISS...")
+        
+        # Load all .npy files into FAISS in a single batch operation
+        embeddings_handler.load_all_embeddings_from_npy_files()
+        
+        logger.info(f"✅ Successfully processed {total_processed} faces")
+        logger.info(f"✅ Loaded {total_stored} embeddings into FAISS")
+        
+        return {"processed": total_processed, "stored": total_stored}
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to load embeddings to FAISS: {e}")
+        raise
+
+@celery_app.task
+def process_directory_batch_parallel(reprocess=False):
+    """Coordinate parallel processing using Celery chains (no blocking calls)."""
+    try:
+        img_data = fe.img_data
+        img_data_list = [str(img) for img in img_data.iterdir() if str(img).lower().endswith(allowed_exts)]
+        
+        if not reprocess:
+            img_data_list = [path for path in img_data_list if not redis_client.exists(Path(path).name)]
+        
+        if not img_data_list:
+            logger.info("No new images to process.")
+            return {"processed": 0, "stored": 0}
+        
+        len_img_data_list = len(img_data_list)
+        logger.info(f"🚀 Starting parallel batch processing for {len_img_data_list} images...")
+        
+        # Use chord to run all workers in parallel, then execute callback
+        from celery import chord
+        
+        # Create the parallel job
+        job = chord(
+            (process_single_image_to_npy.s(img_path, reprocess) for img_path in img_data_list),
+            load_npy_to_faiss.s()
+        )
+        
+        # Execute the chord (non-blocking)
+        result = job.apply_async()
+        
+        logger.info(f"📤 Submitted {len_img_data_list} image processing tasks to workers")
+        
+        # Return the AsyncResult (don't wait)
+        return {"task_id": result.id, "submitted_images": len_img_data_list}
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to submit parallel batch processing: {e}")
+        raise
+
+# Keep the old single-worker method as backup
+@celery_app.task
+def process_directory_batch_single(reprocess=False):
+    """Single worker batch process (backup method)."""
     try:
         img_data = fe.img_data
         img_data_list = [str(img) for img in img_data.iterdir() if str(img).lower().endswith(allowed_exts)]
@@ -120,7 +230,7 @@ def process_directory_batch(reprocess=False):
                         try:
                             embedding = fe.extract_features(face_array)
                             all_embeddings.append(embedding)
-                            all_face_ids.append(img_name)#_face_{i}")
+                            all_face_ids.append(f"{Path(img_name).stem}_face_{i}")
                         except Exception as e:
                             logger.error(f"Failed to process face {i} from {img_name}: {e}")
                     processed_count += 1
@@ -146,6 +256,9 @@ def process_directory_batch(reprocess=False):
         logger.error(f"❌ Batch processing failed: {e}")
         raise
 
-def main(reprocess=False):
+def main(reprocess=False, use_parallel=True):
     """Main controller for batch processing directory images."""
-    return process_directory_batch.delay(reprocess)
+    if use_parallel:
+        return process_directory_batch_parallel.delay(reprocess)
+    else:
+        return process_directory_batch_single.delay(reprocess)
