@@ -64,25 +64,14 @@ class ImageProcessor:
         shutil.move(str(img_path), self.failed_extractions_path)
         logger.error(f"{reason} in {img_path.name}")
 
-    def extract_faces(self, img_input, save=False):
+    def extract_faces(self, image_bytes: bytes):
         """
-        Extract faces from either file path (str) or image bytes.
-        Returns list of PIL Images (if save=False) or list of file paths (if save=True)
+        Extract faces from image bytes only. Returns list of numpy arrays.
         """
         try:
-            # Handle different input types
-            if isinstance(img_input, bytes):
-                from io import BytesIO
-                img_pil = Image.open(BytesIO(img_input)).convert("RGB")
-                img_array = np.array(img_pil)
-                img_name = f"memory_image_{datetime.now().timestamp()}"
-                img_path = None  # No path for bytes input
-            elif isinstance(img_input, str):
-                img_path = Path(img_input)
-                img_array = str(img_path)
-                img_name = img_path.name
-            else:
-                raise ValueError("img_input must be either string path or bytes")
+            from io import BytesIO
+            img_pil = Image.open(BytesIO(image_bytes)).convert("RGB")
+            img_array = np.array(img_pil)
 
             # Extract faces using RetinaFace
             faces = RetinaFace.extract_faces(
@@ -92,71 +81,36 @@ class ImageProcessor:
             )
             
             if not faces:
-                if img_path:
-                    self._mark_as_failed(img_path, "No faces detected")
                 raise Exception("No faces detected in image")
 
             if len(faces) == 1 and any(x == 0 for x in faces[0].shape):
-                if img_path:
-                    self._mark_as_failed(img_path, "Face extraction failed")
                 raise Exception("Face extraction failed - couldn't extract detected faces")
 
-            # Process extracted faces
+            # Process extracted faces - return numpy arrays only
             result = []
             for i, face in enumerate(faces):
                 if face.any():
-                    if save and img_path:
-                        # Save to disk (original behavior)
-                        face_img = Image.fromarray(face.astype("uint8")).convert("RGB")
-                        face_img = face_img.resize((224, 224))
-                        face_filename = f"{img_path.stem}_face_{i}{img_path.suffix}"
-                        face_filepath = self.extracted_faces_path / face_filename
-                        face_img.save(face_filepath)
-                        result.append(str(face_filepath))
-                    else:
-                        # Face is already a numpy array from RetinaFace
-                        # Use cv2 for direct numpy array resizing (much faster)
-                        face_resized = cv2.resize(face.astype("uint8"), (224, 224))
-                        result.append(face_resized)
+                    # Face is already a numpy array from RetinaFace
+                    # Use cv2 for direct numpy array resizing (much faster)
+                    face_resized = cv2.resize(face.astype("uint8"), (224, 224))
+                    result.append(face_resized)
                 else:
-                    logger.info(f"Some faces in {img_name} couldn't be extracted")
+                    logger.info(f"Some faces couldn't be extracted")
             
-            return str(result) if save and img_path else result
+            return result
             
         except Exception as e:
-            error_msg = f"Error processing {img_name if 'img_name' in locals() else 'image'}: {str(e)}"
+            error_msg = f"Error processing image: {str(e)}"
             logger.error(error_msg)
             raise Exception(error_msg)
 
-    def extract_features(self, face_input: Union[str, Image.Image, np.ndarray, bytearray, bytes], save=False) -> np.ndarray:
+    def extract_features(self, face_array: np.ndarray) -> np.ndarray:
         """
-        Extract features from file path (str), PIL Image, numpy array, or bytearray.
+        Extract features from face numpy array only.
         """
         try:
-            # Handle different input types
-            if isinstance(face_input, np.ndarray):
-                # Face array already processed (most efficient path)
-                arr = face_input.astype("uint8")  # RGB, uint8, shape (224, 224, 3)
-                face_name = f"memory_face_array_{datetime.now().timestamp()}"
-                face_path = None
-            elif isinstance(face_input, (bytearray, bytes)):
-                from io import BytesIO
-                face_img = Image.open(BytesIO(face_input)).convert("RGB").resize((224, 224))
-                arr = np.array(face_img)
-                face_name = f"memory_face_bytes_{datetime.now().timestamp()}"
-                face_path = None
-            elif isinstance(face_input, Image.Image):
-                face_img = face_input.convert("RGB").resize((224, 224))
-                arr = np.array(face_img)
-                face_name = f"memory_face_pil_{datetime.now().timestamp()}"
-                face_path = None
-            elif isinstance(face_input, str):
-                face_path = Path(face_input)
-                face_img = Image.open(face_path).convert("RGB").resize((224, 224))
-                arr = np.array(face_img)
-                face_name = face_path.name
-            else:
-                raise ValueError("face_input must be string path, PIL Image, numpy array, or bytearray")
+            # Face array already processed (most efficient path)
+            arr = face_array.astype("uint8")  # RGB, uint8, shape (224, 224, 3)
 
             # DeepFace expects BGR arrays; convert RGB -> BGR
             bgr = arr[:, :, ::-1]
@@ -170,41 +124,9 @@ class ImageProcessor:
 
             embedding = np.array(embedding_obj["embedding"], dtype=np.float64)
             embedding = embedding / np.linalg.norm(embedding)
-
-            if save and face_path:
-                embeddings_path = self.extracted_faces_embeddings_path / face_path.name
-                feature_path = embeddings_path.with_name(embeddings_path.name + ".npy")
-                np.save(feature_path, embedding)
             
             return embedding
 
         except Exception as e:
-            error_msg = f"Error generating embedding for {face_name if 'face_name' in locals() else 'face'}: {str(e)}"
-            raise Exception(error_msg)
+            raise Exception(f"Error generating embedding from face array: {str(e)}")
 
-    def save_query_image(self, file: FileStorage) -> Tuple[Image.Image, Path]:
-        import hashlib
-        from io import BytesIO
-
-        try:
-            file_bytes = file.stream.read()
-        except Exception as e:
-            raise Exception(f"Can't open file: {e}")
-
-        file_hash = hashlib.sha256(file_bytes).hexdigest()
-        file_ext = Path(file.filename).suffix or ".png"
-        new_filename = f"{file_hash}{file_ext}"
-
-        uploaded_img_path = self.img_data / new_filename
-
-        img = Image.open(BytesIO(file_bytes)) 
-        if uploaded_img_path.exists():
-            logger.warning(f"Image {new_filename} already exists.")
-            return img, uploaded_img_path
-
-        try:
-            img.save(uploaded_img_path)
-        except Exception as e:
-            raise Exception(f"Failed to save image: {e}")
-
-        return img, uploaded_img_path
