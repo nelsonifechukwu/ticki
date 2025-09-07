@@ -1,4 +1,5 @@
 import os
+import cv2
 import shutil
 import logging
 import coloredlogs
@@ -10,7 +11,7 @@ from datetime import datetime
 from deepface import DeepFace
 from retinaface import RetinaFace
 from werkzeug.datastructures import FileStorage
-import cv2
+
 
 logging.basicConfig(
     level=logging.INFO,
