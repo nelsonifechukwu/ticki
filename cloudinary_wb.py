@@ -12,7 +12,7 @@ from typing import Tuple
 from datetime import datetime
 from flask_restful import Resource, Api
 from flask import Flask, request
-from app.tasks import fe
+from app.tasks import fe, process_and_store_image, process_image_query
 from app.embeddings import embeddings_handler
 # Setup paths
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -64,52 +64,6 @@ def download_img(payload: dict) -> Tuple[bytes, str]:
         logger.warning("No secure_url in webhook payload.")
         return None, None
 
-def compare_and_return(image_bytes: bytes, img_name: str):
-    """Process image completely in memory without saving to disk"""
-    
-    try: 
-        # Extract faces from image bytes (returns numpy arrays)
-        query_faces = fe.extract_faces(image_bytes)
-
-        # Handle input img w/multiple faces
-        if not query_faces:
-            logger.warning("No face found in uploaded image.")
-            return {"error": "No face detected in input image"}, 400
-
-        if len(query_faces) > 1:
-            logger.warning("Multiple faces found in uploaded image.")
-            return {"error": "Input image should contain only one face"}, 400
-
-        # Extract features from the face numpy array
-        query_face = query_faces[0]
-        query_feature = fe.extract_features(query_face).astype(float)
-        results = embeddings_handler.get_similar_faces(query_feature)
-        
-        payload = {
-            "status": "success",
-            "user_url": img_name,
-            "found_url": [
-                {"score": round(score, 4), "img_name": img_name}
-                for score, img_name in results
-            ]
-        }
-    
-        try:
-            resp = requests.post(
-                Config.TICKI_URL,
-                json=payload,
-                timeout=10
-            )
-            resp.raise_for_status()
-            logger.info("✅ Forwarded payload to discovery API.")
-        except Exception as e:
-                logger.error(f"❌ Failed to forward payload to discovery API: {e}")
-                
-        return payload, 200
-    
-    except Exception as e:
-        logger.error(f"Error comparing face: {e}")
-        return {"error": "Internal Server Error"}, 500
     
 class CloudinaryWebhook(Resource):        
     def post(self):
@@ -139,45 +93,33 @@ class CloudinaryWebhook(Resource):
         logger.info("✅ Verified Cloudinary Webhook.")
         image_bytes, img_name = download_img(payload)
         if image_bytes:
-            return compare_and_return(image_bytes, img_name)
+            # Process image and store all face embeddings in FAISS
+            result = process_and_store_image.delay(image_bytes, img_name)
+            return {"status": "processing", "message": f"Started processing {img_name}", "task_id": result.id}, 202
         else:
             return {"error": "Failed to download image"}, 500
         # return {"status": "received"}, 200
-
-class CloudinaryUpload(Resource):
-    def post(self):
-        try:
-            file_path = request.json.get("file_path")
-            if not file_path or not os.path.exists(file_path):
-                logger.warning("Invalid or missing file_path.")
-                return {"error": "Invalid or missing file_path"}, 400
-
-            response = cloudinary.uploader.upload(file_path)
-            logger.info(f"Uploaded: {response['secure_url']}")
-            return {"uploaded": response}, 200
-        except Exception as e:
-            logger.error(f"Upload error: {e}")
-            return {"error": str(e)}, 500
         
 class TickiGet(Resource):
     def get(self):
-        args = request.args.get()
+        args = request.args
         if Config.CLOUDINARY_API_SECRET != args["api_key"]:
             return {"error": "Forbidden Access - Bad API KEY"}, 403
         try: 
-            img_url = args["url"]
-            img_name = args["img_name"]
+            img_url = args.get("url")
+            if not img_url:
+                return {"error": "Missing 'url' parameter"}, 400
+            img_name = args.get("img_name", f"query_image_{datetime.now().timestamp()}")
             response = requests.get(img_url)
             response.raise_for_status()
             logger.info(f"Downloaded image to memory")
-            return compare_and_return(response.content, img_name)
+            return process_image_query(response.content, img_name)
         except Exception as e:
             return {"error": str(e)}, 400
         
 
 # Register endpoints
-api.add_resource(CloudinaryWebhook, "/cloudinary-webhook")
-api.add_resource(CloudinaryUpload, "/upload")
+api.add_resource(CloudinaryWebhook, "/process_image")
 api.add_resource(TickiGet, "/user_image")
 
 if __name__ == "__main__":
