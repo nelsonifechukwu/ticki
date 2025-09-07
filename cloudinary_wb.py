@@ -139,6 +139,8 @@ class CloudinaryWebhook(Resource):
         logger.info("✅ Verified Cloudinary Webhook.")
         image_bytes, img_name = download_img(payload)
         if image_bytes:
+            pass
+            #extract faces, get features, store in embeddings
             return compare_and_return(image_bytes, img_name)
         else:
             return {"error": "Failed to download image"}, 500

@@ -10,6 +10,7 @@ from datetime import datetime
 from deepface import DeepFace
 from retinaface import RetinaFace
 from werkzeug.datastructures import FileStorage
+import cv2
 
 logging.basicConfig(
     level=logging.INFO,
@@ -103,19 +104,19 @@ class ImageProcessor:
             result = []
             for i, face in enumerate(faces):
                 if face.any():
-                    # Convert face array to PIL Image
-                    face_img = Image.fromarray(face.astype("uint8")).convert("RGB")
-                    face_img = face_img.resize((224, 224))
-                    
                     if save and img_path:
                         # Save to disk (original behavior)
+                        face_img = Image.fromarray(face.astype("uint8")).convert("RGB")
+                        face_img = face_img.resize((224, 224))
                         face_filename = f"{img_path.stem}_face_{i}{img_path.suffix}"
                         face_filepath = self.extracted_faces_path / face_filename
                         face_img.save(face_filepath)
                         result.append(str(face_filepath))
                     else:
-                        # Return PIL Image in memory
-                        result.append(face_img)
+                        # Face is already a numpy array from RetinaFace
+                        # Use cv2 for direct numpy array resizing (much faster)
+                        face_resized = cv2.resize(face.astype("uint8"), (224, 224))
+                        result.append(face_resized)
                 else:
                     logger.info(f"Some faces in {img_name} couldn't be extracted")
             
@@ -126,25 +127,35 @@ class ImageProcessor:
             logger.error(error_msg)
             raise Exception(error_msg)
 
-    def extract_features(self, face_input: Union[str, Image.Image], save=False) -> np.ndarray:
+    def extract_features(self, face_input: Union[str, Image.Image, np.ndarray, bytearray], save=False) -> np.ndarray:
         """
-        Extract features from either file path (str) or PIL Image.
+        Extract features from file path (str), PIL Image, numpy array, or bytearray.
         """
         try:
             # Handle different input types
-            if isinstance(face_input, str):
-                face_path = Path(face_input)
-                face_img = Image.open(face_path).convert("RGB").resize((224, 224))
-                face_name = face_path.name
+            if isinstance(face_input, np.ndarray):
+                # Face array already processed (most efficient path)
+                arr = face_input.astype("uint8")  # RGB, uint8, shape (224, 224, 3)
+                face_name = f"memory_face_array_{datetime.now().timestamp()}"
+                face_path = None
+            elif isinstance(face_input, (bytearray, bytes)):
+                from io import BytesIO
+                face_img = Image.open(BytesIO(face_input)).convert("RGB").resize((224, 224))
+                arr = np.array(face_img)
+                face_name = f"memory_face_bytes_{datetime.now().timestamp()}"
+                face_path = None
             elif isinstance(face_input, Image.Image):
                 face_img = face_input.convert("RGB").resize((224, 224))
-                face_name = f"memory_face_{datetime.now().timestamp()}"
+                arr = np.array(face_img)
+                face_name = f"memory_face_pil_{datetime.now().timestamp()}"
                 face_path = None
+            elif isinstance(face_input, str):
+                face_path = Path(face_input)
+                face_img = Image.open(face_path).convert("RGB").resize((224, 224))
+                arr = np.array(face_img)
+                face_name = face_path.name
             else:
-                raise ValueError("face_input must be either string path or PIL Image")
-
-            # Convert PIL to numpy array
-            arr = np.array(face_img)  # RGB, uint8, shape (224, 224, 3)
+                raise ValueError("face_input must be string path, PIL Image, numpy array, or bytearray")
 
             # DeepFace expects BGR arrays; convert RGB -> BGR
             bgr = arr[:, :, ::-1]
