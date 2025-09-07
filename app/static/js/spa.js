@@ -122,6 +122,20 @@ const addStyles = () => {
       border-color: var(--success-color);
       background: rgba(17, 153, 142, 0.05);
     }
+    
+    .face-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      text-align: center;
+    }
+    
+    .selectable-face input:checked + div .face-label {
+      color: var(--primary-color);
+      font-weight: 600;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -269,11 +283,12 @@ const formatMultipleFaces = (faces) => {
       <input
         type="checkbox"
         name="selected_faces"
-        value="${face.name}"
+        value="face_${face.index}"
         class="face-select-checkbox"
       />
       <div>
-        <img src="${face.url}" alt="Detected face" />
+        <img src="${face.url}" alt="${face.name}" />
+        <span class="face-label">${face.name}</span>
       </div>
     </label>
   `

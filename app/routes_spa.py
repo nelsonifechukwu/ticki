@@ -3,13 +3,18 @@ sys.path.append("./")
 import ast
 import numpy as np 
 from app import app
+from PIL import Image
+from io import BytesIO
 from typing import List
 from pathlib import Path
-from flask import request, render_template, make_response, jsonify
+from flask import request, render_template, make_response, jsonify, send_file
 from flask_restful import Resource, Api
 from .tasks import fe 
 from .cbir import logger
 from .embeddings import embeddings_handler
+
+# Global variable to store current face arrays for multiple selection
+current_faces = []
 
 @app.context_processor 
 def inject_paths():
@@ -37,44 +42,43 @@ class HomeResource(Resource):
             if not img_stream:
                 return {"error": "No image file provided", "code": "NO_IMAGE"}, 400
             
-            _, query_img_path = fe.save_query_image(img_stream)
-            query_img_path_str = str(query_img_path) 
+            # Convert FileStorage to bytes for processing
+            img_bytes = img_stream.read()
             
-            query_face_paths_str = fe.extract_faces(query_img_path)
-            query_face_paths = ast.literal_eval(query_face_paths_str)
+            # Extract faces using updated method
+            faces = fe.extract_faces(img_bytes)
             
-            if not query_face_paths:
+            if not faces:
                 return {"error": "No faces detected in the uploaded image", "code": "NO_FACES_DETECTED"}, 400
             
             # Handle multiple faces
-            if len(query_face_paths) > 1:
-                query_faces_names = [Path(face_path).name for face_path in query_face_paths]
-                base_path = Path("app/static") 
-                extracted_faces_path = fe.extracted_faces_path.relative_to(base_path)
+            if len(faces) > 1:
+                global current_faces
+                current_faces = faces  # Store for later use
                 
-                face_options = []
-                for face_name in query_faces_names:
-                    face_options.append({
-                        "name": face_name,
-                        "url": f"/static/{extracted_faces_path}/{face_name}"
+                # Create face info for frontend
+                face_info = []
+                for i in range(len(faces)):
+                    face_info.append({
+                        'index': i,
+                        'name': f'Face {i+1}',
+                        'url': f'/face_image/{i}'
                     })
                 
                 return {
                     "status": "multiple_faces",
-                    "faces": face_options,
-                    "message": f"Found {len(query_face_paths)} faces. Please select which faces to search for."
+                    "faces": face_info,
+                    "message": f"Found {len(faces)} faces. Please select which faces to search for."
                 }, 200
             
             # Single face processing
-            query_face_path = Path(query_face_paths[0])
-            query_feature = fe.extract_features(query_face_path).astype(float)
+            query_feature = fe.extract_features(faces[0]).astype(float)
             results = self._get_similar_faces(query_feature, threshold)
             
             return {
                 "status": "success",
                 "results": self._format_results(results),
-                "query_image": query_img_path_str,
-                "faces_found": len(query_face_paths)
+                "faces_found": len(faces)
             }, 200
                 
         except Exception as e:
@@ -115,14 +119,19 @@ class MultipleInputFacesResource(HomeResource):
                 return {"error": "No faces selected", "code": "NO_FACES_SELECTED"}, 400
             
             features: List[np.ndarray] = []
-            for face_name in selected_faces:
-                face_path = fe.extracted_faces_path / face_name
-                if not face_path.exists():
-                    logger.warning(f"Face file not found: {face_name}")
-                    continue
-                    
-                query_feature = fe.extract_features(face_path).astype(float)
-                features.append(query_feature)
+            global current_faces
+            
+            for face_selection in selected_faces:
+                try:
+                    if face_selection.startswith('face_') and current_faces:
+                        # Extract face index from selection (e.g., "face_0" -> 0)
+                        face_idx = int(face_selection.split('_')[-1])
+                        if face_idx < len(current_faces):
+                            face_array = current_faces[face_idx]
+                            query_feature = fe.extract_features(face_array).astype(float)
+                            features.append(query_feature)
+                except Exception as e:
+                    logger.error(f"Error processing face {face_selection}: {e}")
 
             if not features:
                 return {"error": "No valid face files found", "code": "NO_VALID_FACES"}, 400
@@ -140,6 +149,9 @@ class MultipleInputFacesResource(HomeResource):
             unique_results = [(sim, name) for name, sim in seen_names.items()]
             unique_results.sort(key=lambda x: x[0], reverse=True)
 
+            # Clear current_faces after processing
+            current_faces = []
+            
             return {
                 "status": "success",
                 "results": self._format_results(unique_results),
@@ -196,8 +208,41 @@ class SystemStatusResource(Resource):
                 "details": str(e)
             }, 500
 
+
+class LoadImage(Resource):
+    def get(self, face_idx):
+        """Serve face image directly from memory as JPEG"""
+        global current_faces
+        
+        try:
+            if face_idx < len(current_faces):
+                face_array = current_faces[face_idx]
+                
+                # Convert BGR to RGB (RetinaFace sometimes outputs BGR format)
+                if len(face_array.shape) == 3 and face_array.shape[2] == 3:
+                    # Convert BGR to RGB to fix bluish appearance
+                    face_array = face_array[:, :, ::-1]  # BGR to RGB conversion
+                
+                # Convert numpy array to PIL Image
+                pil_image = Image.fromarray(face_array.astype('uint8'))
+                
+                # Convert to bytes
+                img_buffer = BytesIO()
+                pil_image.save(img_buffer, format='JPEG', quality=85)
+                img_buffer.seek(0)
+                
+                from flask import send_file
+                return send_file(img_buffer, mimetype='image/jpeg')
+            else:
+                return "Face not found", 404
+                
+        except Exception as e:
+            logger.error(f"Error serving face image {face_idx}: {e}")
+            return "Error serving image", 500
+    
 # API setup
 api = Api(app)
-api.add_resource(HomeResource, "/", endpoint="index") 
+api.add_resource(HomeResource, "/", endpoint="/index") 
 api.add_resource(MultipleInputFacesResource, "/multiple-faces", endpoint="multiple-faces")
 api.add_resource(SystemStatusResource, "/api/status", endpoint="system-status")
+api.add_resource(LoadImage, "/face_image/<int:face_idx>")
