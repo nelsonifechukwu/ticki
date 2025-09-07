@@ -6,7 +6,7 @@ import pickle
 from pathlib import Path
 from typing import Tuple, List, Literal
 from .cbir import logger
-from .tasks import database, store_in_redis
+from .tasks import database #store_in_redis
 
 
 class EmbeddingsStore:
@@ -312,45 +312,72 @@ class FaissEmbeddingsStore:
             _worker()
         #return features, img_names
 
-    def _add_and_rebuild_index(self, query_feature: np.ndarray, query_img_path: str):
-        """Core: add `query_feature` and rebuild the index. Must be called under lock."""
-        try: 
-            query_img_name = str(Path(query_img_path).name)
-
-            # Skip if already in store
-            if query_img_name in self.img_names:
-                logger.info(f"{query_img_name} already exists in embedding store. Skipping.")
-                return
-            
-            try:
-                existing_features, existing_names = self._read() 
-            except ValueError:
-                # Store not initialized yet
-                existing_features = np.empty((0, query_feature.shape[1]), dtype=np.float32)
-                existing_names = []
-
-            # Build combined matrix + names
-            combined_features = query_feature if existing_features.size == 0 else np.vstack([existing_features, query_feature])
-            updated_img_names = existing_names.append(query_img_name)   
-            
-            self._write(combined_features, updated_img_names)   # <- your existing writer that rebuilds FAISS + saves names
-            logger.info(f"SUCCESS: {query_img_name} added and index rebuilt with {len(updated_img_names)} embeddings.")
-        except ValueError as v:
-            logger.error(f"Error adding to index: {e}")
-        except Exception as e:
-            logger.error(f"Error rebuilding index: {e}")
-            
-    def add_feature(self, query_feature: np.ndarray, query_img_path: str, sync_mode:bool=True):
-        """rebuild sync or in background thread."""
+    def add_feature(self, query_feature: np.ndarray, query_img_path, sync_mode: bool = True):
+        """
+        Add embeddings and rebuild index.
+        query_feature: np.ndarray of shape (1, dim) for single or (n, dim) for batch
+        query_img_path: str for single or List[str] for batch
+        """
         from threading import Thread
+        
         def _worker():
-            with self._lock:
-                self._add_and_rebuild_index(query_feature, query_img_path)
+
+            try:
+                # Ensure query_feature is 2D numpy array
+                if isinstance(query_feature, list):
+                    features = np.vstack(query_feature).astype(np.float32)
+                else:
+                    features = np.atleast_2d(query_feature).astype(np.float32)
                 
-        if sync_mode:        
+                # Handle face_ids
+                if isinstance(query_img_path, list):
+                    face_ids = [str(Path(path).name) if isinstance(path, str) else path for path in query_img_path]
+                else:
+                    face_ids = [str(Path(query_img_path).name) if isinstance(query_img_path, str) else query_img_path]
+                
+                # Validate dimensions
+                if len(face_ids) != features.shape[0]:
+                    raise ValueError(f"Mismatch: {features.shape[0]} embeddings but {len(face_ids)} face_ids")
+                
+                # Filter out duplicates
+                new_features = []
+                new_ids = []
+                for i, face_id in enumerate(face_ids):
+                    if face_id not in self.img_names:
+                        new_features.append(features[i])
+                        new_ids.append(face_id)
+                    else:
+                        logger.info(f"{face_id} already exists in embedding store. Skipping.")
+                
+                if not new_features:
+                    logger.info("All embeddings already exist in store. Skipping.")
+                    return
+                
+                # Stack new features
+                new_features_array = np.vstack(new_features)
+                
+                # Combine with existing embeddings
+                try:
+                    existing_features, existing_names = self._read()
+                    combined_features = np.vstack([existing_features, new_features_array])
+                    combined_names = existing_names + new_ids
+                except ValueError:
+                    # Store not initialized yet
+                    combined_features = new_features_array
+                    combined_names = new_ids
+                
+                # Rebuild index with all embeddings
+                self._write(combined_features, combined_names)
+                logger.info(f"✅ Added {len(new_ids)} embeddings. Total in index: {len(combined_names)}")
+                
+            except Exception as e:
+                logger.error(f"❌ Error adding embeddings: {e}")
+                raise
+        
+        if sync_mode:
             t = Thread(target=_worker, daemon=True)
             t.start()
-            logger.info(f"Started background rebuild for {Path(query_img_path).name}")
+            logger.info(f"Started background rebuild for {np.atleast_2d(query_feature).shape[0]} embeddings")
         else:
             _worker()
 # Global instance
