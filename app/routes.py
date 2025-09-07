@@ -31,23 +31,18 @@ class HomeResource(Resource):
     def post(self):  
         threshold = float(request.form.get('threshold', 0.67))    
         img_stream = request.files.get("query-img")
-        _, query_img_path = fe.save_query_image(img_stream)
-        query_img_path_str = str(query_img_path) 
-        
-        query_face_paths_str = fe.extract_faces(query_img_path)
-        query_face_paths = ast.literal_eval(query_face_paths_str)
+        faces = fe.extract_faces(img_stream)
         
         context = { 
             "input_faces": [],
             "similarity_info": [] 
         }    
         #handle input img w/multiple faces
-        if len(query_face_paths) > 1:
+        if len(faces) > 1:
             query_faces_names = [Path(face_path).name for face_path in query_face_paths]
             context["input_faces"] = query_faces_names
         else:
-            query_face_path = Path(query_face_paths[0])
-            query_feature = fe.extract_features(query_face_path).astype(float)
+            query_feature = fe.extract_features(faces[0]).astype(float)
             results = self._get_similar_faces(query_feature, threshold)
             #embeddings_handler.mark_as_processed(query_feature, query_img_path_str, query_face_paths)
             context["similarity_info"] = results
