@@ -113,7 +113,7 @@ def process_single_image_to_npy(image_path: str, reprocess: bool = False):
                 embedding = fe.extract_features(face_array)
                 
                 # Save embedding to .npy file with face ID
-                face_id = f"{Path(img_name).stem}_face_{i}"
+                face_id = f"{Path(img_name).stem}_face_{i}{Path(image_path).suffix}"
                 npy_path = embeddings_handler.extracted_faces_embeddings_path / f"{face_id}.npy"
                 np.save(npy_path, embedding)
                 
@@ -147,7 +147,7 @@ def load_npy_to_faiss(results):
         logger.info(f"📦 All workers completed. Loading {total_stored} embeddings into FAISS...")
         
         # Load all .npy files into FAISS in a single batch operation
-        embeddings_handler.load_all_embeddings_in_faiss()
+        embeddings_handler.load_all_embeddings_in_faiss(external=False)
         
         logger.info(f"✅ Successfully processed {total_processed} faces")
         logger.info(f"✅ Loaded {total_stored} embeddings into FAISS")
