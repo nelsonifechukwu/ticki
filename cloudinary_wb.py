@@ -68,8 +68,8 @@ def compare_and_return(image_bytes: bytes, img_name: str):
     """Process image completely in memory without saving to disk"""
     
     try: 
-        # Extract faces from image bytes (returns PIL Images when save=False)
-        query_faces = fe.extract_faces(image_bytes, save=False)
+        # Extract faces from image bytes (returns numpy arrays)
+        query_faces = fe.extract_faces(image_bytes)
 
         # Handle input img w/multiple faces
         if not query_faces:
@@ -80,9 +80,9 @@ def compare_and_return(image_bytes: bytes, img_name: str):
             logger.warning("Multiple faces found in uploaded image.")
             return {"error": "Input image should contain only one face"}, 400
 
-        # Extract features from the face PIL image (don't save embeddings)
+        # Extract features from the face numpy array
         query_face = query_faces[0]
-        query_feature = fe.extract_features(query_face, save=False).astype(float)
+        query_feature = fe.extract_features(query_face).astype(float)
         results = embeddings_handler.get_similar_faces(query_feature)
         
         payload = {
@@ -139,8 +139,6 @@ class CloudinaryWebhook(Resource):
         logger.info("✅ Verified Cloudinary Webhook.")
         image_bytes, img_name = download_img(payload)
         if image_bytes:
-            pass
-            #extract faces, get features, store in embeddings
             return compare_and_return(image_bytes, img_name)
         else:
             return {"error": "Failed to download image"}, 500
