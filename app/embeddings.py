@@ -276,8 +276,11 @@ class FaissEmbeddingsStore:
         
         return results
     
-    def load_all_embeddings_from_npy_files(self, cleanup_npy: bool = True):
+    def load_all_embeddings_in_faiss(self, external: bool = True, cleanup_npy: bool = True):
         """Load all .npy face embeddings into FAISS index and optionally clean up files."""
+        if external:
+            self._load_index_in_mem()
+            return
         try:
             features = []
             face_ids = []
@@ -296,7 +299,8 @@ class FaissEmbeddingsStore:
                     
                     # Use the full filename (with _face_i) as the face ID
                     face_id = feature_path.stem  # e.g., "IMG_001_face_0"
-                    face_ids.append(face_id.split("_face")[0]) #id=IMG_001 (only name)
+                    img_name = face_id.split("_face")[0] + Path(face_id).suffix #id=IMG_001.jpeg (only name)
+                    face_ids.append(img_name) 
                     
                 except Exception as e:
                     logger.error(f"Failed to load {feature_path}: {e}")
