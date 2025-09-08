@@ -1,6 +1,8 @@
 import sys
 sys.path.append("./")
 import ast
+import time
+import secrets
 import numpy as np 
 from app import app
 from PIL import Image
@@ -9,13 +11,15 @@ from typing import List
 from pathlib import Path
 #from scipy.spatial import distance
 from flask_restful import Resource, Api
-from flask import request, render_template, make_response
+from flask import request, render_template, make_response, session
 from .tasks import fe 
 from .cbir import logger
 from .embeddings import embeddings_handler
 
 # Global variable to store current face arrays for multiple selection
 current_faces = []
+# Session-based face access tokens
+face_sessions = {}
 
 @app.context_processor 
 def inject_paths():
@@ -55,12 +59,21 @@ class HomeResource(Resource):
             global current_faces
             current_faces = faces  # Store for later use in MultipleInputFacesResource
             
+            # Generate secure session token for face access
+            face_token = secrets.token_urlsafe(32)
+            session['face_token'] = face_token
+            face_sessions[face_token] = {
+                'timestamp': time.time(),
+                'face_count': len(faces)
+            }
+            
             # Create face info for template (no PIL conversion needed here)
             face_info = []
             for i in range(len(faces)):
                 face_info.append({
                     'index': i,
-                    'name': f'Face {i+1}'
+                    'name': f'Face {i+1}',
+                    'url': f'/face_image/{i}?token={session["face_token"]}'
                 })
             
             context["input_faces"] = face_info
@@ -127,42 +140,67 @@ class MultipleInputFacesResource(HomeResource):
         unique_results = [(sim, name) for name, sim in seen_names.items()]
         unique_results.sort(key=lambda x: x[0], reverse=True)
 
-        # Clear current_faces after processing
+        # Clear current_faces and session after processing
         current_faces = []
+        face_token = session.get('face_token')
+        if face_token:
+            face_sessions.pop(face_token, None)
+            session.pop('face_token', None)
         
         context["similarity_info"] = unique_results
         return make_response(render_template("main.html", **context), 200)
 
 class LoadImage(Resource):
     def get(self, face_idx):
-        """Serve face image directly from memory as JPEG"""
+        """Serve face image directly from memory as JPEG (with security validation)"""
         global current_faces
         
         try:
-            if face_idx < len(current_faces):
-                face_array = current_faces[face_idx]
+            # Security validation 1: Check token
+            token = request.args.get('token')
+            if not token or token not in face_sessions:
+                logger.warning(f"Unauthorized face image access attempt for index {face_idx}")
+                return "Unauthorized", 403
+            
+            # Security validation 2: Check session validity
+            session_data = face_sessions[token]
+            if time.time() - session_data['timestamp'] > 3600:  # 1 hour expiry
+                face_sessions.pop(token, None)
+                return "Session expired", 403
+            
+            # Security validation 3: Check face index bounds
+            if face_idx >= session_data['face_count'] or face_idx < 0:
+                logger.warning(f"Invalid face index {face_idx} for session {token[:8]}...")
+                return "Invalid face index", 400
+            
+            # Security validation 4: Check if faces still exist in memory
+            if face_idx >= len(current_faces):
+                return "Face no longer available", 404
                 
-                # Convert BGR to RGB (RetinaFace sometimes outputs BGR format)
-                if len(face_array.shape) == 3 and face_array.shape[2] == 3:
-                    # Convert BGR to RGB to fix bluish appearance
-                    face_array = face_array[:, :, ::-1]  # BGR to RGB conversion
+            face_array = current_faces[face_idx]
                 
-                # Convert numpy array to PIL Image
-                pil_image = Image.fromarray(face_array.astype('uint8'))
+            # Convert BGR->RGB to fix bluish appearance (RetinaFace sometimes outputs BGR format)
+            if len(face_array.shape) == 3 and face_array.shape[2] == 3:
+                face_array = face_array[:, :, ::-1]  # BGR to RGB conversion
                 
-                # Convert to bytes
-                img_buffer = BytesIO()
-                pil_image.save(img_buffer, format='JPEG', quality=85)
-                img_buffer.seek(0)
-                
-                from flask import send_file
-                return send_file(img_buffer, mimetype='image/jpeg')
-            else:
-                return "Face not found", 404
+            # Convert numpy array to PIL Image
+            pil_image = Image.fromarray(face_array.astype('uint8'))
+            
+            # Convert to bytes
+            img_buffer = BytesIO()
+            pil_image.save(img_buffer, format='JPEG', quality=85)
+            img_buffer.seek(0)
+            
+            from flask import send_file
+            return send_file(img_buffer, mimetype='image/jpeg')
                 
         except Exception as e:
             logger.error(f"Error serving face image {face_idx}: {e}")
             return "Error serving image", 500
+        
+        except Exception as e:
+            logger.error(f"Security error in face image serving: {e}")
+            return "Access denied", 403
     
 api = Api(app)
 api.add_resource(HomeResource, "/", endpoint="index") 
