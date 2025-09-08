@@ -9,7 +9,7 @@ from PIL import Image
 from io import BytesIO
 from typing import List
 from pathlib import Path
-from flask import request, render_template, make_response, jsonify, send_file, session
+from flask import request, render_template, make_response, session
 from flask_restful import Resource, Api
 from .tasks import fe 
 from .cbir import logger
