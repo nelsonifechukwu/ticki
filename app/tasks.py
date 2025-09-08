@@ -96,7 +96,7 @@ def process_single_image_to_npy(image_path: str, reprocess: bool = False):
         # Check if already processed
         if not reprocess or not redis_client.setnx(img_name, "in-progress"):
             logger.info(f"Skipping {img_name}: Already processed.")
-            return
+            return {"processed":0, "stored":0, "image": img_name}
             
         redis_client.set(img_name, "in-progress")
         
@@ -105,7 +105,7 @@ def process_single_image_to_npy(image_path: str, reprocess: bool = False):
         if not faces:
             redis_client.set(img_name, 'no-faces')
             logger.warning(f"Skipping {img_name}: No faces found.")
-            return
+            return {"processed":0, "stored":0, "image": img_name}
         
         stored_count = 0
         # Process each face and save as .npy
@@ -128,10 +128,13 @@ def process_single_image_to_npy(image_path: str, reprocess: bool = False):
             redis_client.set(img_name, 'completed')
             logger.info(f"✅ {img_name}: Processed {len(faces)} faces, stored {stored_count} embeddings")
         else:
-            redis_client.set(img_name, 'failed: no embeddings generated')         
+            redis_client.set(img_name, 'failed: no embeddings generated') 
+            
+        return  {"processed":len(faces), "stored":stored_count, "image": img_name}        
     except Exception as e:
         logger.error(f"❌ Failed to process {image_path}: {e}")
         redis_client.set(Path(image_path).name, f'failed: {e}')
+        return {"processed":0, "stored":0, "image": Path(image_path).name}
 
 @celery_app.task
 def load_npy_to_faiss(results):
