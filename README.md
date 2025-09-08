@@ -661,4 +661,4 @@ For technical support, feature requests, or bug reports:
 
 **Ticki** - Transforming face search with AI-powered precision and enterprise-grade performance.
 
-*Built with ❤️ for developers, by developers.*
+*Built with ❤️ for everyone, by [Nelson](www.nelsonelijah.com).*
