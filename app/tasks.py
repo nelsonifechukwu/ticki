@@ -54,7 +54,7 @@ def process_and_store_image(image_input, img_name: str):
     """Process single image and store embeddings immediately (webhook use case)."""
     try:
         if not redis_client.setnx(img_name, "in-progress"):
-            logger.info(f"Skipping {img_name}: Already processed.")
+            logger.info(f"❌ Skipping {img_name}: Already processed.")
             return {"processed": 0, "stored": 0}
         
         faces = fe.extract_faces(image_input)
