@@ -12,7 +12,7 @@ from typing import Tuple
 from datetime import datetime
 from flask_restful import Resource, Api
 from flask import Flask, request
-from app.tasks import fe, process_and_store_image, process_image_query
+from app.tasks import fe, process_and_store_image, compare_image_query
 from app.embeddings import embeddings_handler
 # Setup paths
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -113,7 +113,7 @@ class TickiGet(Resource):
             response = requests.get(img_url)
             response.raise_for_status()
             logger.info(f"Downloaded image to memory")
-            return process_image_query(response.content, img_name)
+            return compare_image_query(response.content, img_name)
         except Exception as e:
             return {"error": str(e)}, 400
         

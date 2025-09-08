@@ -10,7 +10,7 @@ allowed_exts = ("jpg", "png", "jpeg")
 
 fe = ImageProcessor(database)
 
-def process_image_query(image_input, img_name: str) -> dict:
+def compare_image_query(image_input, img_name: str) -> dict:
     """Process image for face comparison and return results."""
     try:
         query_faces = fe.extract_faces(image_input)
