@@ -95,7 +95,9 @@ class CloudinaryWebhook(Resource):
         if image_bytes:
             # Process image and store all face embeddings in FAISS
             try:
-                result = process_and_store_image.delay(image_bytes, img_name)  # path or base64
+                import base64
+                b64 = base64.b64encode(image_bytes).decode('ascii')
+                result = process_and_store_image.delay(b64, img_name)#use base64 since celery cannot serialize bytes
             except Exception as e:
                 logger.warning(f"Celery publish failed: {e}")
             return {"status": "processing", "message": f"Started processing {img_name}", "task_id": result.id}, 202
