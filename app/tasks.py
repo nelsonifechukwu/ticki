@@ -50,9 +50,13 @@ def compare_image_query(image_input, img_name: str) -> dict:
         return {"error": "Internal Server Error"}, 500
 
 @celery_app.task
-def process_and_store_image(image_input, img_name: str):
-    """Process single image and store embeddings immediately (webhook use case)."""
+def process_and_store_image(image_input: str, img_name: str):
+    """Process base64 single image and store embeddings immediately (webhook use case)."""
+    import base64    
+    import binascii
     try:
+        image_input = base64.b64decode(image_input, validate=True)
+        
         if not redis_client.setnx(img_name, "in-progress"):
             logger.info(f"❌ Skipping {img_name}: Already processed.")
             return {"processed": 0, "stored": 0}
@@ -81,6 +85,9 @@ def process_and_store_image(image_input, img_name: str):
             logger.info(f"✅ Stored {len(embeddings)} embeddings from {img_name}")
         
         return {"processed": len(faces), "stored": len(embeddings)}
+    
+    except (binascii.Error, ValueError):
+        raise ValueError("image_input must be valid base64")
         
     except Exception as e:
         logger.error(f"❌ Failed to process {img_name}: {e}")
