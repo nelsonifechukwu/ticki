@@ -95,6 +95,7 @@ class CloudinaryWebhook(Resource):
         if image_bytes:
             # Process image and store all face embeddings in FAISS
             result = process_and_store_image.delay(image_bytes, img_name)
+            logger.info(f"{img_name} processed successfully")
             return {"status": "processing", "message": f"Started processing {img_name}", "task_id": result.id}, 202
         else:
             return {"error": "Failed to download image"}, 500
