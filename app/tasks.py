@@ -55,34 +55,46 @@ def process_and_store_image(image_input: str, img_name: str):
     import base64    
     import binascii
     try:
+        logger.info(f"🚀 Starting processing for {img_name}")
+        logger.info(f"📦 Decoding base64 image (length: {len(image_input)})")
         image_input = base64.b64decode(image_input, validate=True)
+        logger.info(f"✅ Base64 decoded successfully, image size: {len(image_input)} bytes")
         
+        logger.info(f"🔒 Checking Redis lock for {img_name}")
         if not redis_client.setnx(img_name, "in-progress"):
             logger.info(f"❌ Skipping {img_name}: Already processed.")
             return {"processed": 0, "stored": 0}
         
+        logger.info(f"🔍 Extracting faces from {img_name}")
         faces = fe.extract_faces(image_input)
+        logger.info(f"👥 Found {len(faces)} faces in {img_name}")
+        
         if not faces:
             redis_client.set(img_name, 'no-faces')
+            logger.info(f"❌ No faces found in {img_name}")
             return {"processed": 0, "stored": 0}
         
         # Extract embeddings and store immediately
+        logger.info(f"🧠 Extracting features for {len(faces)} faces")
         embeddings = []
         face_ids = []
         for i, face_array in enumerate(faces):
             try:
+                logger.info(f"   Processing face {i+1}/{len(faces)}")
                 embedding = fe.extract_features(face_array)
                 embeddings.append(embedding)
                 face_ids.append(f"{img_name}_face_{i}")
+                logger.info(f"   ✅ Face {i+1} processed successfully")
             except Exception as e:
                 logger.error(f"Failed to process face {i} from {img_name}: {e}")
         
         if embeddings:
+            logger.info(f"💾 Storing {len(embeddings)} embeddings to FAISS")
             # Batch store all faces from this image
             embeddings_array = np.vstack(embeddings)  # Convert list to numpy array
             embeddings_handler.add_feature(embeddings_array, face_ids, sync_mode=False)
             redis_client.set(img_name, 'completed')
-            logger.info(f"✅ Stored {len(embeddings)} embeddings from {img_name}")
+            logger.info(f"✅ Successfully stored {len(embeddings)} embeddings from {img_name}")
         
         return {"processed": len(faces), "stored": len(embeddings)}
     
