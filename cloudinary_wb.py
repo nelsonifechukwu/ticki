@@ -118,7 +118,10 @@ class TickiGet(Resource):
             response = requests.get(img_url)
             response.raise_for_status()
             logger.info(f"Downloaded image to memory")
-            return compare_image_query(response.content, img_name)
+            import base64
+            b64 = base64.b64encode(response.content).decode('ascii')
+            compare_image_query.delay(b64, img_name)
+            return {"status": f"comparison in progress for {img_name}"}, 202
         except Exception as e:
             return {"error": str(e)}, 400
         

@@ -10,9 +10,14 @@ allowed_exts = ("jpg", "png", "jpeg")
 
 fe = ImageProcessor(database)
 
+@celery_app.task
 def compare_image_query(image_input, img_name: str) -> dict:
     """Process image for face comparison and return results."""
+    import base64    
+    import binascii
     try:
+        logger.info(f"🚀 Starting comparison for {img_name}")
+        image_input = base64.b64decode(image_input, validate=True)
         query_faces = fe.extract_faces(image_input)
         
         if not query_faces:
@@ -44,6 +49,9 @@ def compare_image_query(image_input, img_name: str) -> dict:
             logger.error(f"❌ Failed to forward payload to discovery API: {e}")
                 
         return payload, 200
+
+    except (binascii.Error, ValueError):
+        raise ValueError("image_input must be valid base64")
         
     except Exception as e:
         logger.error(f"Error processing {img_name}: {e}")
